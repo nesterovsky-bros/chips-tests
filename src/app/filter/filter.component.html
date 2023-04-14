@@ -1,0 +1,91 @@
+<mat-chip-grid #chipGrid>
+    <mat-chip-row *ngFor="let item of items" (removed)="remove(item)" (dblclick)="edit(item)"
+        (keydown.enter)="edit(item)" [highlighted]="item == editItem">
+        {{format(item.option, item.value)}}
+        <button matChipRemove *ngIf="!item.option.readonly"><mat-icon>cancel</mat-icon></button>
+    </mat-chip-row>
+
+    <div class="optionSelector" [ngSwitch]="itemOption?.type" [hidden]="!filteredOptions.length"
+        [class.active]="!autohideOptions || popup || editItem">
+        <mat-form-field subscriptSizing="dynamic">
+            <mat-select [(ngModel)]="itemOption" class="option" (selectionChange)="optionChange()"
+                (closed)="popup = false; optionChange()" (opened)="popup = true">
+                <mat-option *ngFor="let option of filteredOptions" [value]="option">
+                    {{option.title}}
+                </mat-option>
+            </mat-select>
+            <input type="text" hidden [matChipInputFor]="chipGrid">
+        </mat-form-field>
+
+        <ng-container *ngSwitchCase="ItemType.String" [ngSwitch]="!!itemOption!.values">
+            <ng-container *ngSwitchCase="false">
+                <mat-form-field subscriptSizing="dynamic">
+                    <input matInput class="stringOption optionValue" type="text"
+                        [style.width.px]="viewValue.offsetWidth" [pattern]="itemOption!.pattern ?? ''" #optionValue
+                        #optionModel="ngModel" [(ngModel)]="itemValue" (change)="add()" (keydown.enter)="add()"
+                        (keydown.escape)="cancel()">
+                </mat-form-field>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+                <mat-form-field subscriptSizing="dynamic">
+                    <input matInput class="stringOption optionValue" type="text" #optionValue
+                        [style.width.px]="viewValue.offsetWidth" #optionModel="ngModel" [(ngModel)]="itemValue"
+                        (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()"
+                        [pattern]="itemOption!.pattern ?? ''" [matAutocomplete]="optionAutocomplete" />
+                    <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
+                        (opened)="popup=true" (closed)="popup=false">
+                        <mat-option *ngFor="let item of itemOption!.values | async" [value]="item">
+                            {{format(itemOption!, item)}}
+                        </mat-option>
+                    </mat-autocomplete>
+                </mat-form-field>
+            </ng-container>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="ItemType.Integer" [ngSwitch]="!!itemOption!.values">
+            <ng-container *ngSwitchCase="false">
+                <mat-form-field subscriptSizing="dynamic">
+                    <input matInput class="integerOption optionValue" type="text" [pattern]="itemOption!.pattern ?? ''"
+                        [style.width.px]="viewValue.offsetWidth" #optionValue #optionModel="ngModel"
+                        [(ngModel)]="itemValue" (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()" />
+                </mat-form-field>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+                <mat-form-field subscriptSizing="dynamic">
+                    <input matInput class="integerOption optionValue" type="text" #optionValue #optionModel="ngModel"
+                        [(ngModel)]="itemValue" (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()"
+                        [style.width.px]="viewValue.offsetWidth" [pattern]="itemOption?.pattern ?? ''"
+                        [matAutocomplete]="optionAutocomplete" />
+                    <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
+                        (opened)="popup=true" (closed)="popup=false">
+                        <mat-option *ngFor="let item of itemOption!.values | async" [value]="item">
+                            {{format(itemOption!, item)}}
+                        </mat-option>
+                    </mat-autocomplete>
+                </mat-form-field>
+            </ng-container>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="ItemType.Decimal">
+            <mat-form-field subscriptSizing="dynamic">
+                <input matInput class="decimalOption optionValue" type="text" [style.width.px]="viewValue.offsetWidth"
+                    [pattern]="itemOption!.pattern ?? ''" #optionValue #optionModel="ngModel" [(ngModel)]="itemValue"
+                    (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()" />
+            </mat-form-field>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="ItemType.Date">
+            <mat-form-field subscriptSizing="dynamic">
+                <input matInput class="dateOption optionValue" type="text" #optionValue #optionModel="ngModel"
+                    [(ngModel)]="itemValue" (dateChange)="add()" [style.width.px]="viewValue.offsetWidth"
+                    (keydown.enter)="add()" (keydown.escape)="cancel()" [matDatepicker]="datePicker" />
+                <mat-datepicker #datePicker (opened)="popup=true" (closed)="popup=false"></mat-datepicker>
+            </mat-form-field>
+            <mat-datepicker-toggle class="optionValueToggle" [for]="datePicker"></mat-datepicker-toggle>
+        </ng-container>
+        <span #viewValue class="viewValue">{{optionText}}</span>
+    </div>
+</mat-chip-grid>
+<button mat-icon-button (click)="search.emit(items)">
+    <mat-icon>search</mat-icon>
+</button>

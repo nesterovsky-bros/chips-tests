@@ -1,0 +1,88 @@
+:host 
+{
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  background-color: #f5f5f5;
+  border-radius: 1.5em;
+  padding: .25em .5em;
+  box-sizing: border-box;
+}
+
+:host > mat-chip-grid
+{
+  flex-grow: 1;
+}
+
+:host::ng-deep .mdc-evolution-chip-set__chips
+{
+  align-items: center;
+}
+
+mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active)
+{
+  visibility: hidden;
+}
+
+.optionSelector:not([hidden])
+{
+  padding: 0 .5em;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .5em;
+}
+
+.optionSelector::ng-deep .mat-mdc-form-field-infix
+{
+  width: auto;
+  min-height: auto;
+  padding: 0 !important;
+}
+
+.optionSelector::ng-deep .mat-mdc-chip-input
+{
+  margin: 0;
+}
+
+.optionSelector::ng-deep .mat-mdc-text-field-wrapper
+{
+  padding: 0 .25em;
+}
+
+.optionSelector::ng-deep mat-select
+{
+  padding-inline-end: 2.5em;
+}
+
+.integerOption,
+.decimalOption,
+.dateOption
+{
+  direction: ltr;
+}
+
+.viewValue
+{
+  display: inline-block;
+  padding-left: .25em; 
+  white-space: nowrap;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  visibility: hidden;
+  min-width: 1em;
+  max-width: 20em;
+}
+
+.optionValue
+{
+  min-width: 1em;
+  max-width: 20em;
+}
+
+.dateOption
+{
+  min-width: 3em;
+}
