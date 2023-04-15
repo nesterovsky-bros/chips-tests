@@ -21,9 +21,9 @@ const allOptions: FilterOption[] =
 
       if (value != null)
       {
-        value = String(value).toUpperCase();
+        value = String(value).trim().toUpperCase();
 
-        list = list.filter(item => String(item).toUpperCase().includes(value));
+        list = list.filter(item => String(item).trim().toUpperCase().includes(value));
       }
 
       return of(list);
@@ -31,7 +31,22 @@ const allOptions: FilterOption[] =
   },
   {
     name: "correctnessDate",
+    alternative: "correctnessDate",
     title: "תאריך",
+    type: ItemType.Date
+  },
+  {
+    name: "correctnessDate.from",
+    alternative: "correctnessDate",
+    group: "correctnessDate.range",
+    title: "תאריך מ",
+    type: ItemType.Date
+  },
+  {
+    name: "correctnessDate.to",
+    alternative: "correctnessDate",
+    group: "correctnessDate.range",
+    title: "תאריך עד",
     type: ItemType.Date
   },
   {

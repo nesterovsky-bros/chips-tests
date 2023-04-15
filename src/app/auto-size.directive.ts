@@ -1,14 +1,16 @@
-import { Directive, ElementRef, OnDestroy, OnInit } from "@angular/core";
+import { AfterViewChecked, Directive, ElementRef, OnDestroy, OnInit, Optional } from "@angular/core";
+import { NgModel } from "@angular/forms";
+import { Subscription } from "rxjs";
 
 @Directive({ selector: "input[autoSize]" })
-export class AutoSizeDirective implements OnInit, OnDestroy
+export class AutoSizeDirective implements OnInit, OnDestroy, AfterViewChecked
 {
   private view?: HTMLElement;
 
   constructor(private element: ElementRef<HTMLInputElement>) 
   {
     this.updateView = this.updateView.bind(this);
-    this.element.nativeElement.addEventListener("input", this.updateView);
+    element.nativeElement.addEventListener("input", this.updateView);
   }
 
   ngOnInit(): void 
@@ -16,11 +18,8 @@ export class AutoSizeDirective implements OnInit, OnDestroy
     this.view = this.element.nativeElement.ownerDocument.createElement("div");
     this.view.style.visibility = "hidden";
     this.view.style.position = "absolute";
+    this.view.style.whiteSpace = "nowrap";
     this.element.nativeElement.parentElement?.append(this.view);
-    this.updateView();
-
-    // Update later in case of value is changed.
-    setTimeout(() => this.updateView());
   }
 
   ngOnDestroy(): void 
@@ -29,15 +28,22 @@ export class AutoSizeDirective implements OnInit, OnDestroy
     this.view?.remove();
   }
 
+  ngAfterViewChecked(): void 
+  {
+    this.updateView();
+  }
+
   updateView()
   {
-    if (this.view)
+    const view = this.view;
+
+    if (view)
     {
-      this.view.textContent = this.element.nativeElement.value;
+      const element = this.element.nativeElement; 
+      const value = element.value;
 
-      const bounds = this.view.getBoundingClientRect(); 
-
-      this.element.nativeElement.style.width = `${bounds.width}px`;
+      view.textContent = value;
+      element.style.width = `${view.getBoundingClientRect().width}px`;
     }
   }
 }

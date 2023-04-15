@@ -6,10 +6,12 @@
 <table border="1">
     <tr>
         <th>Title</th>
+        <th>Name</th>
         <th>Value</th>
     </tr>
     <tr *ngFor="let item of items">
         <td>{{item.option.title}}</td>
+        <td>{{item.option.name}}</td>
         <td>{{item.value}}</td>
     </tr>
 </table>

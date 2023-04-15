@@ -2,7 +2,7 @@ import { map, Observable, of } from 'rxjs';
 
 import 
 { 
-  Component, DoCheck, 
+  Component,
   ElementRef, EventEmitter, 
   Inject, Input, 
   OnChanges, OnInit, 
@@ -12,7 +12,7 @@ import
 
 import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
 import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from '@angular/material/core';
-import { ENTER} from '@angular/cdk/keycodes';
+import { MatDatepickerInput } from '@angular/material/datepicker';
 
 export enum ItemType
 {
@@ -69,13 +69,14 @@ export class FilterComponent implements OnInit, OnChanges
 
   public filteredOptions: FilterOption[] = [];
 
-  readonly separatorKeysCodes = [ENTER] as const;
   readonly ItemType = ItemType;
 
-  @ViewChild("optionValue") optionValue: ElementRef<HTMLInputElement>|null = null;
-  @ViewChild("optionModel") optionModel: NgModel|null = null;
+  @ViewChild("optionValue") optionValue?: ElementRef<HTMLInputElement>;
+  @ViewChild("dateValue") dateValue?: MatDatepickerInput<any>;
+  @ViewChild("optionModel") optionModel?: NgModel;
+  
 
-  itemOption?: FilterOption|null = null;
+  itemOption?: FilterOption|string|null = null;
   itemValue: any|null = null;
   editItem?: FilterItem|null = null;
   popup: boolean = false;
@@ -100,6 +101,56 @@ export class FilterComponent implements OnInit, OnChanges
     {
       this.invalidateOptions();
     }
+  }
+
+  getOption(coerse = true): FilterOption|null
+  {
+    let option = this.itemOption;
+
+    if (option == null)
+    {
+      return null;
+    }
+
+    if (typeof option !== "string")
+    {
+      return option;
+    }
+
+    if (!coerse)
+    {
+      return null;
+    }
+
+    option = option.trim().toUpperCase();
+
+    let match: FilterOption|null = null;
+
+    if (option)
+    {
+      for(const item of this.filteredOptions) 
+      {
+        const title = item.title.trim().toUpperCase();
+
+        if (title == option)
+        {
+          match = item;
+
+          break;
+        }
+        else if (!match && title.startsWith(option))
+        {
+          match = item;
+        }
+      }
+
+      if (match)
+      {
+        this.itemOption = match;
+      }
+    }
+
+    return match;
   }
 
   convert(option: FilterOption|null, value: any): any
@@ -130,32 +181,61 @@ export class FilterComponent implements OnInit, OnChanges
   {
     return option.format ? option.format(value) :
       option.type == ItemType.Date && 
+      value != null &&
       this.dateAdapter &&
       this.dateFormats ?
         `${option.title}: ${this.dateAdapter.format(value, this.dateFormats.display.dateInput)}` :
-        `${option.title}: ${value}`;
+        `${option.title}: ${value ?? ''}`;
   }
 
-  formatOption(option: FilterOption)
+  formatOption(option: FilterOption|null): string
   {
-    return option.title;
+    return option?.title ?? "";
+  }
+
+  resetItemValue(): void
+  {
+    this.itemValue = null;
+    
+    if (this.optionValue)
+    {
+      this.optionValue.nativeElement.value = "";
+    }
+
+    if (this.dateValue)
+    {
+      this.dateValue.value = null;
+    }
   }
 
   remove(item: FilterItem): void 
   {
-    if (!item.option.readonly)
-    {
-      const index = this.items.indexOf(item);
+    const option = item.option;
 
-      if (index >= 0) 
+    if (!option.readonly)
+    {
+      const items: FilterItem[] = [];
+      let first: FilterItem|null = null;
+
+      for(const other of this.items) 
       {
-        this.items.splice(index, 1);
-        this.itemOption = item.option;
-        this.itemValue = null;
-        this.editItem = null;
-        this.invalidateOptions(true);
-        this.itemsChange.emit(this.items);
+        if (other !== item && 
+          (!item.option.group || item.option.group !== other.option.group))
+        {
+          items.push(other);
+        }
+        else
+        {
+          first ??= other;
+        }
       }
+
+      this.itemOption = first?.option;
+      this.resetItemValue();
+      this.editItem = null;
+      this.items = items;
+      this.invalidateOptions(true);
+      this.itemsChange.emit(this.items);
     }
   }
 
@@ -172,7 +252,7 @@ export class FilterComponent implements OnInit, OnChanges
 
   add(): void 
   {
-    const option = this.itemOption;
+    const option = this.getOption();
 
     if (!option || this.optionModel?.invalid)
     {
@@ -186,17 +266,48 @@ export class FilterComponent implements OnInit, OnChanges
       return;
     }
 
-    if (this.editItem?.option !== option)
+    if (this.editItem?.option === option)
     {
-      this.items.push({ option, value });
+      this.editItem.value = value;
     }
     else
     {
-      this.editItem!.value = value;
+      if (!this.filteredOptions.includes(option))
+      {
+        return;
+      }
+
+      const options = this.options;
+      const index = options.indexOf(option);
+      let startGroup = index;
+      let endGroup = index;
+  
+      if (option.group)
+      {
+        while(startGroup > 0 && options[startGroup - 1].group === option.group)
+        {
+          --startGroup;
+        }
+  
+        while(endGroup < options.length - 1 && 
+          options[endGroup + 1].group === option.group)
+        {
+          ++endGroup;
+        }
+      }
+
+      for(let i = startGroup; i <= endGroup; ++i)
+      {
+        this.items.push(
+        { 
+          option: options[i], 
+          value: i === index ? value : null
+        });
+      }
     }
 
-    this.itemValue = null;
     this.editItem = null;
+    this.resetItemValue();
     this.invalidateOptions(true);
     this.itemsChange.emit(this.items);
   }
@@ -208,7 +319,7 @@ export class FilterComponent implements OnInit, OnChanges
       setTimeout(() => 
       {
         this.editItem = null;
-        this.itemValue = null;
+        this.resetItemValue();
         this.invalidateOptions(true);
       });
     }
@@ -216,7 +327,7 @@ export class FilterComponent implements OnInit, OnChanges
 
   validate(control: AbstractControl): Observable<ValidationErrors|null>
   {
-    const option = this.itemOption;
+    const option = this.getOption();
     let value = control.value;
 
     if (!option || value == null)
@@ -243,27 +354,69 @@ export class FilterComponent implements OnInit, OnChanges
 
   invalidateOptions(focusValue = false)
   {
+    let option = this.getOption();
+
+    const alternatives = new Map(
+      this.items.
+        filter(item => item.option.alternative).
+        map(item => [item.option.alternative!, item.option.group ?? null]));
+
     const used = new Set(
       this.items.
         filter(item => !item.option.allowMultiple && item !== this.editItem).
         map(item => item.option));
 
-    const flatOptions: FilterOption[] = [];
-    //const relations: = new Map();
+    this.filteredOptions = this.options.
+      filter(item => !used.has(item) && 
+        (!item.alternative || 
+          !alternatives.has(item.alternative) ||
+          alternatives.get(item.alternative) == item.group));
 
-    
-    this.filteredOptions = this.options.filter(item => !used.has(item));
-
-    if (this.itemOption && !this.filteredOptions.includes(this.itemOption))
+    if (option && !this.filteredOptions.includes(option))
     {
+      option = null;
       this.itemOption = null;
-      this.itemValue = null;
+      this.resetItemValue();
     }
 
-    if (!this.itemOption && this.filteredOptions.length)
+    if (!option)
     {
-      this.itemOption = this.filteredOptions[0];
-      this.itemValue = null;
+      this.resetItemValue();
+
+      for(const item of this.items) 
+      {
+        if (item.value == null)
+        {
+          this.itemOption = item.option;
+          this.editItem = item; 
+
+          break;
+        }
+      }
+
+      if (this.filteredOptions.length)
+      {
+        this.itemOption ??= this.filteredOptions[0];
+      }
+      else
+      {
+        if (this.editItem)
+        {
+          this.filteredOptions.push(this.editItem.option);
+        }
+      }
+    }
+
+    for(let i = 1; i < this.filteredOptions.length; ++i)
+    {
+      const option = this.filteredOptions[i];
+
+      if (option !== this.editItem?.option &&
+        option.group && 
+        option.group === this.filteredOptions[i - 1].group)
+      {
+        this.filteredOptions.splice(i--, 1);        
+      }
     }
 
     this.optionModel?.control.markAsPristine();
@@ -276,8 +429,8 @@ export class FilterComponent implements OnInit, OnChanges
 
   optionChange(): void
   {
-    this.itemValue = null;
     this.editItem = null;
+    this.resetItemValue();
     this.invalidateOptions(true);
   }
 

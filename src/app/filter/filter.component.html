@@ -5,19 +5,25 @@
         <button matChipRemove *ngIf="!item.option.readonly"><mat-icon>cancel</mat-icon></button>
     </mat-chip-row>
 
-    <div class="optionSelector" [ngSwitch]="itemOption?.type" [class.empty]="!filteredOptions.length"
+    <input type="text" hidden [matChipInputFor]="chipGrid">
+
+    <div class="optionSelector" *ngIf="{ option: getOption(false) } as item"
+        [ngSwitch]="item.option?.type" [class.empty]="!filteredOptions.length"
         [class.active]="!autohideOptions || popup || editItem">
         <mat-form-field subscriptSizing="dynamic">
-            <mat-select [(ngModel)]="itemOption" class="option" (selectionChange)="optionChange()"
-                (closed)="popup = false; optionChange()" (opened)="popup = true">
+            <input autoSize matInput class="option" type="text"
+                [(ngModel)]="itemOption" (change)="optionChange()" (keydown.enter)="optionChange()"
+                [matAutocomplete]="itemOptionAutocomplete" />
+            <mat-autocomplete #itemOptionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="optionChange()"
+                [displayWith]="formatOption"
+                (opened)="popup=true" (closed)="popup=false">
                 <mat-option *ngFor="let option of filteredOptions" [value]="option">
                     {{option.title}}
                 </mat-option>
-            </mat-select>
-            <input type="text" hidden [matChipInputFor]="chipGrid">
+            </mat-autocomplete>
         </mat-form-field>
 
-        <ng-container *ngSwitchCase="ItemType.String" [ngSwitch]="!!itemOption!.values">
+        <ng-container *ngSwitchCase="ItemType.String" [ngSwitch]="!!item.option!.values">
             <ng-container *ngSwitchCase="false">
                 <mat-form-field subscriptSizing="dynamic">
                     <input autoSize matInput class="stringOption optionValue" type="text" #optionValue
@@ -32,15 +38,15 @@
                         (keydown.enter)="add()" [matAutocomplete]="optionAutocomplete" />
                     <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
                         (opened)="popup=true" (closed)="popup=false">
-                        <mat-option *ngFor="let item of itemOption!.values!(itemValue) | async" [value]="item">
-                            {{format(itemOption!, item)}}
+                        <mat-option *ngFor="let value of item.option!.values!(itemValue) | async" [value]="value">
+                            {{format(item.option!, value)}}
                         </mat-option>
                     </mat-autocomplete>
                 </mat-form-field>
             </ng-container>
         </ng-container>
 
-        <ng-container *ngSwitchCase="ItemType.Integer" [ngSwitch]="!!itemOption!.values">
+        <ng-container *ngSwitchCase="ItemType.Integer" [ngSwitch]="!!item.option!.values">
             <ng-container *ngSwitchCase="false">
                 <mat-form-field subscriptSizing="dynamic">
                     <input autoSize matInput class="integerOption optionValue" type="text" [validateFn]="validate"
@@ -55,8 +61,8 @@
                         (keydown.enter)="add()" [matAutocomplete]="optionAutocomplete" />
                     <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
                         (opened)="popup=true" (closed)="popup=false">
-                        <mat-option *ngFor="let item of itemOption!.values!(itemValue) | async" [value]="item">
-                            {{format(itemOption!, item)}}
+                        <mat-option *ngFor="let value of item.option!.values!(itemValue) | async" [value]="value">
+                            {{format(item.option!, value)}}
                         </mat-option>
                     </mat-autocomplete>
                 </mat-form-field>
@@ -74,6 +80,7 @@
         <ng-container *ngSwitchCase="ItemType.Date">
             <mat-form-field subscriptSizing="dynamic">
                 <input autoSize matInput class="dateOption optionValue" type="text" #optionValue #optionModel="ngModel"
+                    #dateValue="matDatepickerInput"
                     [validateFn]="validate" [(ngModel)]="itemValue" (dateChange)="popup = false; add()"
                     (keydown.enter)="add()" [matDatepicker]="datePicker" />
                 <mat-datepicker #datePicker (opened)="popup = true" (closed)="popup = false"></mat-datepicker>

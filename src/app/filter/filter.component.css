@@ -56,31 +56,27 @@ mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active),
   padding-inline-end: 2.5em;
 }
 
-.integerOption,
-.decimalOption,
-.dateOption
+mat-option::ng-deep .mdc-list-item__primary-text
 {
-  direction: ltr;
+  white-space: nowrap;
 }
 
-.viewValue
+.option
 {
-  display: inline-block;
-  padding-left: .25em; 
-  white-space: nowrap;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  visibility: hidden;
-  min-width: 1em;
-  max-width: 20em;
+  min-width: 2em;
 }
 
 .optionValue
 {
   min-width: 1em;
   max-width: 20em;
+}
+
+.integerOption,
+.decimalOption,
+.dateOption
+{
+  direction: ltr;
 }
 
 .dateOption
