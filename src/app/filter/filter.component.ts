@@ -1,8 +1,17 @@
-import { Component, DoCheck, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
+import 
+{ 
+  Component, DoCheck, 
+  ElementRef, EventEmitter, 
+  Inject, Input, 
+  OnChanges, OnInit, 
+  Optional, Output, 
+  SimpleChanges, ViewChild 
+} from '@angular/core';
+
 import { ENTER} from '@angular/cdk/keycodes';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { NgModel } from '@angular/forms';
-import * as moment from 'moment';
+import { map, Observable, of } from 'rxjs';
+import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
+import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from '@angular/material/core';
 
 export enum ItemType
 {
@@ -10,22 +19,18 @@ export enum ItemType
   Integer,
   Decimal,
   Date,
-
-  Group,
-  Alternative
 }
 
 export interface FilterOption
 {
   title: string;
   type: ItemType;
-  pattern?: RegExp|null;
-  readonly?: boolean|null;
-  required?: boolean|null;
-  allowMultiple?: boolean|null;
-  values?: Observable<any[]>|null;
+  pattern?: RegExp;
+  readonly?: boolean;
+  required?: boolean;
+  allowMultiple?: boolean;
+  values?: (value: any) => Observable<any[]>;
   format?: (value: any) => string;
-  options?: FilterOption[]|null;
 }
 
 export interface FilterItem
@@ -45,26 +50,10 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
   autohideOptions: boolean = false;
 
   @Input()
-  get options(): FilterOption[]
-  {
-    return this._options;
-  }
-
-  set options(value: FilterOption[])
-  {
-    this._options = value ?? [];
-  }
+  options: FilterOption[] = [];
 
   @Input()
-  get items(): FilterItem[]
-  {
-    return this._items;
-  }
-
-  set items(value: FilterItem[])
-  {
-    this._items = value ?? [];
-  }
+  items: FilterItem[] = [];
 
   @Output()
   readonly itemsChange = new EventEmitter<FilterItem[]>();
@@ -73,8 +62,6 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
   readonly search = new EventEmitter<FilterItem[]>();
 
   public filteredOptions: FilterOption[] = [];
-  private _options: FilterOption[] = [];
-  private _items: FilterItem[] = [];
   protected optionText: string = "";
 
   readonly separatorKeysCodes = [ENTER] as const;
@@ -87,6 +74,15 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
   itemValue: any|null = null;
   editItem?: FilterItem|null = null;
   popup: boolean = false;
+
+  constructor(
+    @Optional() 
+    private dateAdapter: DateAdapter<any>|null,
+    @Optional() @Inject(MAT_DATE_FORMATS) 
+    private dateFormats: MatDateFormats|null)
+  {
+    this.validate = this.validate.bind(this);
+  }
 
   ngOnInit(): void 
   {
@@ -109,8 +105,10 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
   format(option: FilterOption, value: any): string
   {
     return option.format ? option.format(value) :
-      moment.isMoment(value) ? 
-        `${option.title}: ${value.format("l")}` :
+      option.type == ItemType.Date && 
+      this.dateAdapter &&
+      this.dateFormats ?
+        `${option.title}: ${this.dateAdapter.format(value, this.dateFormats.display.dateInput)}` :
         `${option.title}: ${value}`;
   }
 
@@ -219,6 +217,65 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
         this.invalidateOptions(true);
       });
     }
+  }
+
+  validate(control: AbstractControl): Observable<ValidationErrors|null>
+  {
+    const option = this.itemOption;
+
+    if (!option)
+    {
+      return of(null);
+    }
+
+    let value = control.value;
+
+    if (value == null)
+    {
+      return of(null);
+    }
+
+    if (option.pattern)
+    {
+      if (!option.pattern.test(value))
+      {
+        return of({ pattern: "invalid pattern" });
+      }
+    }
+
+    switch(option.type)
+    {
+      case ItemType.Integer:
+      {
+        value = parseInt(value);
+        
+        if (isNaN(value))
+        {
+          return of({ integer: "invalid integer" });
+        }
+
+        break;
+      }
+      case ItemType.Decimal:
+      {
+        value = parseFloat(typeof value === "string" ? value.replace(/[\s,]/g, '') : value);
+
+        if (isNaN(value))
+        {
+          return of({ decimal: "invalid decimal" });
+        }
+
+        break;
+      }
+    }
+
+    if (option.values)
+    {
+      return option.values(value).
+        pipe(map(values => values.length ? null : { value: "invalid value" }));
+    }
+
+    return of(null);
   }
 
   invalidateOptions(focusValue = false)

@@ -13,7 +13,19 @@ const allOptions: FilterOption[] =
     title: "סניף",
     type: ItemType.Integer,
     pattern: /\d{3}/,
-    values: of([172, 680])
+    values: (value: any) =>
+    {
+      let list = [172, 680];
+
+      if (value != null)
+      {
+        value = String(value).toUpperCase();
+
+        list = list.filter(item => String(item).toUpperCase().includes(value));
+      }
+
+      return of(list);
+    } 
   },
   {
     title: "תאריך",

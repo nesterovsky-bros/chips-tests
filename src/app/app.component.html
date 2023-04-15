@@ -1,7 +1,8 @@
 <app-filter dir="rtl" [options]="options" [(items)]="items" [autohideOptions]="autohide" (search)="searchCount = searchCount + 1"></app-filter>
-
+<div style="padding: 1em;">
 <div>Autohide: <input type="checkbox" [(ngModel)]="autohide"></div>
-Selected items:
+<br>
+<div>Selected items:</div>
 <table border="1">
     <tr>
         <th>Title</th>
@@ -12,5 +13,7 @@ Selected items:
         <td>{{item.value}}</td>
     </tr>
 </table>
+<br>
 <div>Searches: {{searchCount}}</div>
+</div>
 <router-outlet></router-outlet>

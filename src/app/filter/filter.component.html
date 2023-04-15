@@ -21,7 +21,8 @@
             <ng-container *ngSwitchCase="false">
                 <mat-form-field subscriptSizing="dynamic">
                     <input matInput class="stringOption optionValue" type="text"
-                        [style.width.px]="viewValue.offsetWidth" [pattern]="itemOption!.pattern ?? ''" #optionValue
+                        [validateFn]="validate"
+                        [style.width.px]="viewValue.offsetWidth" #optionValue
                         #optionModel="ngModel" [(ngModel)]="itemValue" (change)="add()" (keydown.enter)="add()"
                         (keydown.escape)="cancel()">
                 </mat-form-field>
@@ -29,12 +30,13 @@
             <ng-container *ngSwitchDefault>
                 <mat-form-field subscriptSizing="dynamic">
                     <input matInput class="stringOption optionValue" type="text" #optionValue
+                        [validateFn]="validate"
                         [style.width.px]="viewValue.offsetWidth" #optionModel="ngModel" [(ngModel)]="itemValue"
                         (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()"
-                        [pattern]="itemOption!.pattern ?? ''" [matAutocomplete]="optionAutocomplete" />
+                        [matAutocomplete]="optionAutocomplete" />
                     <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
                         (opened)="popup=true" (closed)="popup=false">
-                        <mat-option *ngFor="let item of itemOption!.values | async" [value]="item">
+                        <mat-option *ngFor="let item of itemOption!.values!(itemValue) | async" [value]="item">
                             {{format(itemOption!, item)}}
                         </mat-option>
                     </mat-autocomplete>
@@ -45,7 +47,8 @@
         <ng-container *ngSwitchCase="ItemType.Integer" [ngSwitch]="!!itemOption!.values">
             <ng-container *ngSwitchCase="false">
                 <mat-form-field subscriptSizing="dynamic">
-                    <input matInput class="integerOption optionValue" type="text" [pattern]="itemOption!.pattern ?? ''"
+                    <input matInput class="integerOption optionValue" type="text" 
+                        [validateFn]="validate"
                         [style.width.px]="viewValue.offsetWidth" #optionValue #optionModel="ngModel"
                         [(ngModel)]="itemValue" (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()" />
                 </mat-form-field>
@@ -53,12 +56,13 @@
             <ng-container *ngSwitchDefault>
                 <mat-form-field subscriptSizing="dynamic">
                     <input matInput class="integerOption optionValue" type="text" #optionValue #optionModel="ngModel"
+                        [validateFn]="validate"
                         [(ngModel)]="itemValue" (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()"
-                        [style.width.px]="viewValue.offsetWidth" [pattern]="itemOption?.pattern ?? ''"
+                        [style.width.px]="viewValue.offsetWidth"
                         [matAutocomplete]="optionAutocomplete" />
                     <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
                         (opened)="popup=true" (closed)="popup=false">
-                        <mat-option *ngFor="let item of itemOption!.values | async" [value]="item">
+                        <mat-option *ngFor="let item of itemOption!.values!(itemValue) | async" [value]="item">
                             {{format(itemOption!, item)}}
                         </mat-option>
                     </mat-autocomplete>
@@ -69,7 +73,8 @@
         <ng-container *ngSwitchCase="ItemType.Decimal">
             <mat-form-field subscriptSizing="dynamic">
                 <input matInput class="decimalOption optionValue" type="text" [style.width.px]="viewValue.offsetWidth"
-                    [pattern]="itemOption!.pattern ?? ''" #optionValue #optionModel="ngModel" [(ngModel)]="itemValue"
+                    [validateFn]="validate"
+                    #optionValue #optionModel="ngModel" [(ngModel)]="itemValue"
                     (change)="add()" (keydown.enter)="add()" (keydown.escape)="cancel()" />
             </mat-form-field>
         </ng-container>
@@ -77,9 +82,10 @@
         <ng-container *ngSwitchCase="ItemType.Date">
             <mat-form-field subscriptSizing="dynamic">
                 <input matInput class="dateOption optionValue" type="text" #optionValue #optionModel="ngModel"
-                    [(ngModel)]="itemValue" (dateChange)="add()" [style.width.px]="viewValue.offsetWidth"
+                    [validateFn]="validate"
+                    [(ngModel)]="itemValue" (dateChange)="popup = false; add()" [style.width.px]="viewValue.offsetWidth"
                     (keydown.enter)="add()" (keydown.escape)="cancel()" [matDatepicker]="datePicker" />
-                <mat-datepicker #datePicker (opened)="popup=true" (closed)="popup=false"></mat-datepicker>
+                <mat-datepicker #datePicker (opened)="popup = true" (closed)="popup = false"></mat-datepicker>
             </mat-form-field>
             <mat-datepicker-toggle class="optionValueToggle" [for]="datePicker"></mat-datepicker-toggle>
         </ng-container>
