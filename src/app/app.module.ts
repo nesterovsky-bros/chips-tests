@@ -16,13 +16,15 @@ import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatChipsModule} from '@angular/material/chips';
 import { FilterComponent } from './filter/filter.component';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
-import { ValidateFnDirective } from './validateFn.directive';
+import { ValidateFnDirective } from './validate-fn.directive';
+import { AutoSizeDirective } from './auto-size.directive';
 
 @NgModule({
   declarations: [
     AppComponent,
     FilterComponent,
-    ValidateFnDirective
+    ValidateFnDirective,
+    AutoSizeDirective
   ],
   imports: [
     BrowserModule,

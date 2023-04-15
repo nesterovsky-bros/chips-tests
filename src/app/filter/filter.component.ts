@@ -1,3 +1,5 @@
+import { map, Observable, of } from 'rxjs';
+
 import 
 { 
   Component, DoCheck, 
@@ -8,10 +10,9 @@ import
   SimpleChanges, ViewChild 
 } from '@angular/core';
 
-import { ENTER} from '@angular/cdk/keycodes';
-import { map, Observable, of } from 'rxjs';
 import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
 import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from '@angular/material/core';
+import { ENTER} from '@angular/cdk/keycodes';
 
 export enum ItemType
 {
@@ -23,6 +24,10 @@ export enum ItemType
 
 export interface FilterOption
 {
+  name: string;
+  group?: string;
+  alternative?: string;
+
   title: string;
   type: ItemType;
   pattern?: RegExp;
@@ -39,12 +44,13 @@ export interface FilterItem
   value: any;
 }
 
-@Component({
+@Component(
+{
   selector: 'app-filter',
   templateUrl: './filter.component.html',
   styleUrls: ['./filter.component.css']
 })
-export class FilterComponent implements OnInit, OnChanges, DoCheck
+export class FilterComponent implements OnInit, OnChanges
 {
   @Input()
   autohideOptions: boolean = false;
@@ -62,7 +68,6 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
   readonly search = new EventEmitter<FilterItem[]>();
 
   public filteredOptions: FilterOption[] = [];
-  protected optionText: string = "";
 
   readonly separatorKeysCodes = [ENTER] as const;
   readonly ItemType = ItemType;
@@ -89,16 +94,35 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
     this.invalidateOptions();
   }
   
-  ngDoCheck(): void 
-  {
-    this.optionText = this.optionValue?.nativeElement.value ?? "";
-  }
-
   ngOnChanges(changes: SimpleChanges): void 
   {
     if ("options" in changes || "items" in changes)
     {
       this.invalidateOptions();
+    }
+  }
+
+  convert(option: FilterOption|null, value: any): any
+  {
+    if (value == null)
+    {
+      return null;
+    }
+
+    switch(option?.type)
+    {
+      case ItemType.Integer:
+      {
+        return parseInt(value);
+      }
+      case ItemType.Decimal:
+      {
+        return parseFloat(typeof value === "string" ? value.replace(/[\s,]/g, '') : value);
+      }
+      default:
+      {
+        return value;
+      }
     }
   }
 
@@ -148,62 +172,33 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
 
   add(): void 
   {
-    if (this.optionModel && !this.optionModel.valid)
-    {
-      return;
-    }
-
     const option = this.itemOption;
 
-    if (!option)
+    if (!option || this.optionModel?.invalid)
     {
       return;
     }
 
-    let value = this.itemValue;
-    let valid = false;
+    let value = this.convert(option, this.itemValue);
 
-    switch(this.itemOption?.type)
+    if (value == null || isNaN(value))
     {
-      case ItemType.Integer:
-      {
-        value = parseInt(value);
-        valid = !isNaN(value);
-
-        break;
-      }
-      case ItemType.Decimal:
-      {
-        value = parseFloat(typeof value === "string" ? value.replace(/[\s,]/g, '') : value);
-        valid = !isNaN(value);
-
-        break;
-      }
-      case ItemType.String:
-      case ItemType.Date:
-      {
-        valid = true;
-
-        break;
-      }
+      return;
     }
 
-    if (value && valid)
+    if (this.editItem?.option !== option)
     {
-      if (this.editItem?.option !== option)
-      {
-        this.items.push({ option, value });
-      }
-      else
-      {
-        this.editItem!.value = value;
-      }
-
-      this.itemValue = null;
-      this.editItem = null;
-      this.invalidateOptions(true);
-      this.itemsChange.emit(this.items);
+      this.items.push({ option, value });
     }
+    else
+    {
+      this.editItem!.value = value;
+    }
+
+    this.itemValue = null;
+    this.editItem = null;
+    this.invalidateOptions(true);
+    this.itemsChange.emit(this.items);
   }
 
   cancel(): void
@@ -222,60 +217,28 @@ export class FilterComponent implements OnInit, OnChanges, DoCheck
   validate(control: AbstractControl): Observable<ValidationErrors|null>
   {
     const option = this.itemOption;
-
-    if (!option)
-    {
-      return of(null);
-    }
-
     let value = control.value;
 
-    if (value == null)
+    if (!option || value == null)
     {
       return of(null);
     }
 
-    if (option.pattern)
+    if (option.pattern?.test(String(value)) == false)
     {
-      if (!option.pattern.test(value))
-      {
-        return of({ pattern: "invalid pattern" });
-      }
+      return of({ pattern: "invalid pattern" });
     }
 
-    switch(option.type)
+    value = this.convert(option, value);
+
+    if (value == null || isNaN(value))
     {
-      case ItemType.Integer:
-      {
-        value = parseInt(value);
-        
-        if (isNaN(value))
-        {
-          return of({ integer: "invalid integer" });
-        }
-
-        break;
-      }
-      case ItemType.Decimal:
-      {
-        value = parseFloat(typeof value === "string" ? value.replace(/[\s,]/g, '') : value);
-
-        if (isNaN(value))
-        {
-          return of({ decimal: "invalid decimal" });
-        }
-
-        break;
-      }
+      return of(null);
     }
 
-    if (option.values)
-    {
-      return option.values(value).
-        pipe(map(values => values.length ? null : { value: "invalid value" }));
-    }
-
-    return of(null);
+    return option.values?.(value)?.
+      pipe(map(values => values.length ? null : { value: "invalid value" })) ??
+      of(null);
   }
 
   invalidateOptions(focusValue = false)

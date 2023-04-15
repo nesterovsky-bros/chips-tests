@@ -19,7 +19,8 @@
   align-items: center;
 }
 
-mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active)
+mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active),
+.optionSelector.empty
 {
   visibility: hidden;
 }
@@ -85,4 +86,9 @@ mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active)
 .dateOption
 {
   min-width: 3em;
+}
+
+.decimalOption
+{
+  min-width: 5em;
 }

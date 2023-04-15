@@ -5,11 +5,13 @@ import { FilterItem, FilterOption, ItemType } from './filter/filter.component';
 const allOptions: FilterOption[] =
 [
   {
+    name: "report",
     title: "דוח",
     type: ItemType.Integer,
     readonly: true
   },
   {
+    name: "branch",
     title: "סניף",
     type: ItemType.Integer,
     pattern: /\d{3}/,
@@ -28,18 +30,20 @@ const allOptions: FilterOption[] =
     } 
   },
   {
+    name: "correctnessDate",
     title: "תאריך",
     type: ItemType.Date
   },
   {
+    name: "account",
     title: "חשבון",
     type: ItemType.String,
     pattern: /\d{4,}/,
   },
   {
+    name: "amount",
     title: "סכום",
-    type: ItemType.Decimal,
-    pattern: /[+-]?[\d\s.,]+/,
+    type: ItemType.Decimal
   },
 ];
 
