@@ -83,7 +83,7 @@ export class FilterComponent implements OnInit, OnChanges
 
   get active(): boolean
   {
-    return !this.autohideOptions || this.popup || !!this.editItem || this.focusTimeout !== null;
+    return !this.autohideOptions || this.popup || !!this.editItem || this.focusTimeout != null;
   }
 
   constructor(
@@ -460,10 +460,5 @@ export class FilterComponent implements OnInit, OnChanges
       }
     }, 
     100);
-  }
-
-  togglePopup(value: boolean)
-  {
-    this.popup = value;
   }
 }
