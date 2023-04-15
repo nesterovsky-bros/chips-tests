@@ -75,11 +75,16 @@ export class FilterComponent implements OnInit, OnChanges
   @ViewChild("dateValue") dateValue?: MatDatepickerInput<any>;
   @ViewChild("optionModel") optionModel?: NgModel;
   
-
   itemOption?: FilterOption|string|null = null;
   itemValue: any|null = null;
   editItem?: FilterItem|null = null;
   popup: boolean = false;
+  focusTimeout?: ReturnType<typeof setTimeout>|null;
+
+  get active(): boolean
+  {
+    return !this.autohideOptions || this.popup || !!this.editItem || this.focusTimeout !== null;
+  }
 
   constructor(
     @Optional() 
@@ -436,8 +441,16 @@ export class FilterComponent implements OnInit, OnChanges
 
   focusValue(): void
   {
-    setTimeout(() => 
+    if (this.focusTimeout != null)
     {
+      clearTimeout(this.focusTimeout);
+      this.focusTimeout = null;
+    }
+
+    this.focusTimeout = setTimeout(() => 
+    {
+      this.focusTimeout = null;
+
       if (this.optionValue)
       {
         const element = this.optionValue.nativeElement;
@@ -447,5 +460,10 @@ export class FilterComponent implements OnInit, OnChanges
       }
     }, 
     100);
+  }
+
+  togglePopup(value: boolean)
+  {
+    this.popup = value;
   }
 }

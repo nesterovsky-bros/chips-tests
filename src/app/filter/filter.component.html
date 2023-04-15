@@ -9,14 +9,14 @@
 
     <div class="optionSelector" *ngIf="{ option: getOption(false) } as item"
         [ngSwitch]="item.option?.type" [class.empty]="!filteredOptions.length"
-        [class.active]="!autohideOptions || popup || editItem">
+        [class.active]="active">
         <mat-form-field subscriptSizing="dynamic">
             <input autoSize matInput class="option" type="text"
                 [(ngModel)]="itemOption" (change)="optionChange()" (keydown.enter)="optionChange()"
                 [matAutocomplete]="itemOptionAutocomplete" />
             <mat-autocomplete #itemOptionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="optionChange()"
                 [displayWith]="formatOption"
-                (opened)="popup=true" (closed)="popup=false">
+                (opened)="togglePopup(true)" (closed)="togglePopup(false)">
                 <mat-option *ngFor="let option of filteredOptions" [value]="option">
                     {{option.title}}
                 </mat-option>
@@ -37,7 +37,7 @@
                         [validateFn]="validate" #optionModel="ngModel" [(ngModel)]="itemValue" (change)="add()"
                         (keydown.enter)="add()" [matAutocomplete]="optionAutocomplete" />
                     <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
-                        (opened)="popup=true" (closed)="popup=false">
+                        (opened)="togglePopup(true)" (closed)="togglePopup(false)">
                         <mat-option *ngFor="let value of item.option!.values!(itemValue) | async" [value]="value">
                             {{format(item.option!, value)}}
                         </mat-option>
@@ -60,7 +60,7 @@
                         #optionModel="ngModel" [validateFn]="validate" [(ngModel)]="itemValue" (change)="add()"
                         (keydown.enter)="add()" [matAutocomplete]="optionAutocomplete" />
                     <mat-autocomplete #optionAutocomplete="matAutocomplete" panelWidth="auto" (optionSelected)="add()"
-                        (opened)="popup=true" (closed)="popup=false">
+                        (opened)="togglePopup(true)" (closed)="togglePopup(false)">
                         <mat-option *ngFor="let value of item.option!.values!(itemValue) | async" [value]="value">
                             {{format(item.option!, value)}}
                         </mat-option>
@@ -81,9 +81,9 @@
             <mat-form-field subscriptSizing="dynamic">
                 <input autoSize matInput class="dateOption optionValue" type="text" #optionValue #optionModel="ngModel"
                     #dateValue="matDatepickerInput"
-                    [validateFn]="validate" [(ngModel)]="itemValue" (dateChange)="popup = false; add()"
+                    [validateFn]="validate" [(ngModel)]="itemValue" (dateChange)="togglePopup(false); add()"
                     (keydown.enter)="add()" [matDatepicker]="datePicker" />
-                <mat-datepicker #datePicker (opened)="popup = true" (closed)="popup = false"></mat-datepicker>
+                <mat-datepicker #datePicker (opened)="togglePopup(true)" (closed)="togglePopup(false)"></mat-datepicker>
             </mat-form-field>
             <mat-datepicker-toggle class="optionValueToggle" [for]="datePicker"></mat-datepicker-toggle>
         </ng-container>
