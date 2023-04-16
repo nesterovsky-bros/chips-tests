@@ -36,6 +36,7 @@ export interface FilterOption
   allowMultiple?: boolean;
   values?: (value: any) => Observable<any[]>;
   format?: (value: any, withTitle?: boolean) => string;
+  convert?: (value: any) => any;
   validator?: (value: any) => Observable<ValidationErrors | null>;
 }
 
@@ -161,6 +162,11 @@ export class FilterComponent implements OnChanges
     if (value == null)
     {
       return null;
+    }
+
+    if (option?.convert)
+    {
+      return option.convert(value);
     }
 
     switch(option?.type)
@@ -338,13 +344,13 @@ export class FilterComponent implements OnChanges
     this.itemsChange.emit(this.items);
   }
 
-  cancel(): void
+  cancel(focus = false): void
   {
     if (this.editItem)
     {
       this.editItem = null;
       this.resetItemValue();
-      this.invalidateOptions(true);
+      this.invalidateOptions(focus);
     }
   }
 
@@ -495,6 +501,7 @@ export class FilterComponent implements OnChanges
       item.qualifier = qualifiers[index < qualifiers.length ? index : 0];
       event?.preventDefault();
       event?.stopPropagation();
+      this.cancel(false);
     }
   }
 

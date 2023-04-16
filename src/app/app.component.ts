@@ -113,23 +113,31 @@ const allOptions: FilterOption[] =
     title: "מיון",
     type: 'string',
     qualifiers: orderQualifiers,
-    values: (value?: Column|string|null) =>
+    values: () => of(sortableColumns),
+    format: function(value: Column|string|null, withTitle?: boolean)
     {
-      let list = sortableColumns;
+      const text = value == null ? "" :
+        typeof value === "string" ? value :
+        value.label;
 
-      if (value != null)
+      return withTitle ? `${this.title}: ${text}` : (text);
+    },
+    validator: (value?: Column|string|null) =>
+    {
+      if (value == null)
       {
-        const text = (typeof value === "string" ? value : value.label).trim().toUpperCase();
-
-        list = list.filter(item => item.label.trim().toUpperCase().includes(text));
+        return of(null);
       }
 
-      return of(list);
-    },
-    format: function(value: Column, withTitle?: boolean)
-    {
-      return withTitle ? `${this.title}: ${value?.label ?? ''}` : (value?.label ?? '');
-    } 
+      const text = (typeof value === "string" ? value : value.label).trim().toUpperCase();
+
+      if (sortableColumns.find(item => item.label.trim().toUpperCase() === text))
+      {
+        return of(null);
+      }
+
+      return of({ value: "Invalid value"});
+    }
   }
 ];
 

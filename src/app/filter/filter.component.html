@@ -1,19 +1,28 @@
-<mat-chip-grid #chipGrid (keydown.escape)="cancel()">
+<mat-chip-grid #chipGrid (keydown.escape)="cancel(true)">
     <ng-container *ngFor="let item of items">
-        <mat-chip-row (removed)="remove(item)" (dblclick)="edit(item)" (keydown.enter)="edit(item)"
-            (keydown.space)="toggleQualifier(item, $event)" *ngIf="item != editItem">
+        <mat-chip-row (removed)="item === editItem ? cancel(true) : remove(item)" (dblclick)="edit(item)" (keydown.enter)="edit(item)"
+            (click)="item === editItem ? focusValue() : editItem ? edit(item) : cancel(true)"
+            (keydown.space)="toggleQualifier(item, $event)">
             <mat-icon [inline]="true" *ngIf="item.qualifier"
                 (click)="toggleQualifier(item, $event)">{{item.qualifier.icon}}</mat-icon>
-            {{format(item.option, item.value)}}
+            {{format(item.option, item == editItem ? null : item.value)}}
             <button matChipRemove *ngIf="!item.option.readonly"><mat-icon>cancel</mat-icon></button>
         </mat-chip-row>
+        <ng-container *ngIf="item == editItem" [ngTemplateOutlet]="optionSelector"></ng-container>
     </ng-container>
 
     <input type="text" hidden [matChipInputFor]="chipGrid">
 
+    <ng-container *ngIf="!editItem" [ngTemplateOutlet]="optionSelector"></ng-container>
+</mat-chip-grid>
+<button mat-icon-button (click)="cancel(false); search.emit(items)">
+    <mat-icon>search</mat-icon>
+</button>
+
+<ng-template #optionSelector>
     <div class="optionSelector" *ngIf="{ option: getOption(false) } as item" [ngSwitch]="item.option?.type"
         [class.empty]="!filteredOptions.length" [class.active]="active">
-        <mat-form-field subscriptSizing="dynamic">
+        <mat-form-field subscriptSizing="dynamic" *ngIf="!editItem">
             <input autoSize matInput class="option" type="text" [(ngModel)]="itemOption" (change)="optionChange()"
                 (keydown.enter)="optionChange()" [matAutocomplete]="itemOptionAutocomplete"
                 [readonly]="filteredOptions.length < 2" />
@@ -90,7 +99,4 @@
             <mat-datepicker-toggle class="optionValueToggle" [for]="datePicker"></mat-datepicker-toggle>
         </ng-container>
     </div>
-</mat-chip-grid>
-<button mat-icon-button (click)="search.emit(items)">
-    <mat-icon>search</mat-icon>
-</button>
+</ng-template>
