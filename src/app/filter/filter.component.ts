@@ -101,6 +101,7 @@ export class FilterComponent implements OnChanges
     if ("options" in changes || "items" in changes)
     {
       this.invalidateOptions();
+      this.sortItems(this.items);
     }
   }
 
@@ -333,6 +334,7 @@ export class FilterComponent implements OnChanges
     this.editItem = null;
     this.resetItemValue();
     this.invalidateOptions(true);
+    this.sortItems(this.items);
     this.itemsChange.emit(this.items);
   }
 
@@ -494,5 +496,25 @@ export class FilterComponent implements OnChanges
       event?.preventDefault();
       event?.stopPropagation();
     }
+  }
+
+  sortItems(items: FilterItem[]): void
+  {
+    const index: Map<FilterOption, number> = new Map();
+    let option: FilterOption|null = null;
+    let value: number = -1; 
+
+    for(const item of this.options) 
+    {
+      if (!item.group || item.group !== option?.group)  
+      {
+        option = item;
+        ++value;
+      }
+
+      index.set(item, value);
+    }
+
+    items.sort((f, s) => (index.get(f.option) ?? -1) - (index.get(s.option) ?? -1));
   }
 }
