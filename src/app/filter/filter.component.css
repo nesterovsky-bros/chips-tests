@@ -19,6 +19,11 @@
   align-items: center;
 }
 
+:host::ng-deep .mat-mdc-chip-action-label
+{
+  display: flex;
+}
+
 mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active),
 .optionSelector.empty
 {

@@ -5,7 +5,7 @@ import
   Component,
   ElementRef, EventEmitter, 
   Inject, Input, 
-  OnChanges, OnInit, 
+  OnChanges,
   Optional, Output, 
   SimpleChanges, ViewChild 
 } from '@angular/core';
@@ -14,12 +14,12 @@ import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
 import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from '@angular/material/core';
 import { MatDatepickerInput } from '@angular/material/datepicker';
 
-export enum ItemType
+export type ItemType = "string" | "integer" | "decimal" | "date";
+
+export interface FilterQualifier
 {
-  String,
-  Integer,
-  Decimal,
-  Date,
+  icon: string;
+  value: any;
 }
 
 export interface FilterOption
@@ -30,18 +30,20 @@ export interface FilterOption
 
   title: string;
   type: ItemType;
+  qualifiers?: FilterQualifier[];
   pattern?: RegExp;
   readonly?: boolean;
-  required?: boolean;
   allowMultiple?: boolean;
   values?: (value: any) => Observable<any[]>;
-  format?: (value: any) => string;
+  format?: (value: any, withTitle?: boolean) => string;
+  validator?: (value: any) => Observable<ValidationErrors | null>;
 }
 
 export interface FilterItem
 {
   option: FilterOption;
   value: any;
+  qualifier?: FilterQualifier; 
 }
 
 @Component(
@@ -50,7 +52,7 @@ export interface FilterItem
   templateUrl: './filter.component.html',
   styleUrls: ['./filter.component.css']
 })
-export class FilterComponent implements OnInit, OnChanges
+export class FilterComponent implements OnChanges
 {
   @Input()
   autohideOptions: boolean = false;
@@ -69,17 +71,15 @@ export class FilterComponent implements OnInit, OnChanges
 
   public filteredOptions: FilterOption[] = [];
 
-  readonly ItemType = ItemType;
-
   @ViewChild("optionValue") optionValue?: ElementRef<HTMLInputElement>;
   @ViewChild("dateValue") dateValue?: MatDatepickerInput<any>;
   @ViewChild("optionModel") optionModel?: NgModel;
   
   itemOption?: FilterOption|string|null = null;
-  itemValue: any|null = null;
+  itemValue?: any|null = null;
   editItem?: FilterItem|null = null;
   popup: boolean = false;
-  focusTimeout?: ReturnType<typeof setTimeout>|null;
+  focusTimeout?: ReturnType<typeof setTimeout>|null = null;
 
   get active(): boolean
   {
@@ -93,13 +93,9 @@ export class FilterComponent implements OnInit, OnChanges
     private dateFormats: MatDateFormats|null)
   {
     this.validate = this.validate.bind(this);
+    this.formatValue = this.formatValue.bind(this);
   }
 
-  ngOnInit(): void 
-  {
-    this.invalidateOptions();
-  }
-  
   ngOnChanges(changes: SimpleChanges): void 
   {
     if ("options" in changes || "items" in changes)
@@ -147,6 +143,7 @@ export class FilterComponent implements OnInit, OnChanges
         {
           match = item;
         }
+        // No more cases.
       }
 
       if (match)
@@ -167,13 +164,17 @@ export class FilterComponent implements OnInit, OnChanges
 
     switch(option?.type)
     {
-      case ItemType.Integer:
+      case 'integer':
       {
-        return parseInt(value);
+        value = parseInt(value);
+
+        return isNaN(value) ? undefined : value;
       }
-      case ItemType.Decimal:
+      case 'decimal':
       {
-        return parseFloat(typeof value === "string" ? value.replace(/[\s,]/g, '') : value);
+        value = parseFloat(typeof value === "string" ? value.replace(/[\s,]/g, '') : value);
+
+        return isNaN(value) ? undefined : value;
       }
       default:
       {
@@ -182,20 +183,35 @@ export class FilterComponent implements OnInit, OnChanges
     }
   }
 
-  format(option: FilterOption, value: any): string
+  format(option: FilterOption, value: any, withTitle = true): string
   {
-    return option.format ? option.format(value) :
-      option.type == ItemType.Date && 
-      value != null &&
-      this.dateAdapter &&
-      this.dateFormats ?
-        `${option.title}: ${this.dateAdapter.format(value, this.dateFormats.display.dateInput)}` :
-        `${option.title}: ${value ?? ''}`;
+    if (option.format)
+    {
+      return option.format(value, withTitle);
+    }
+    else
+    {
+      const text = option.type == 'date' && 
+        value != null &&
+        this.dateAdapter &&
+        this.dateFormats ?
+        this.dateAdapter.format(value, this.dateFormats.display.dateInput) :
+        String(value ?? '');
+
+      return withTitle ? `${option.title}: ${text}` : text;
+    }
   }
 
   formatOption(option: FilterOption|null): string
   {
     return option?.title ?? "";
+  }
+
+  formatValue(value: any): string
+  {
+    const option = this.getOption();
+
+    return option ? this.format(option, value, false) : "";
   }
 
   resetItemValue(): void
@@ -266,7 +282,7 @@ export class FilterComponent implements OnInit, OnChanges
 
     let value = this.convert(option, this.itemValue);
 
-    if (value == null || isNaN(value))
+    if (value == null)
     {
       return;
     }
@@ -303,10 +319,13 @@ export class FilterComponent implements OnInit, OnChanges
 
       for(let i = startGroup; i <= endGroup; ++i)
       {
+        const other = options[i];
+
         this.items.push(
         { 
-          option: options[i], 
-          value: i === index ? value : null
+          option: other, 
+          value: i === index ? value : null,
+          qualifier: other.qualifiers?.[0]
         });
       }
     }
@@ -321,12 +340,9 @@ export class FilterComponent implements OnInit, OnChanges
   {
     if (this.editItem)
     {
-      setTimeout(() => 
-      {
-        this.editItem = null;
-        this.resetItemValue();
-        this.invalidateOptions(true);
-      });
+      this.editItem = null;
+      this.resetItemValue();
+      this.invalidateOptions(true);
     }
   }
 
@@ -345,15 +361,20 @@ export class FilterComponent implements OnInit, OnChanges
       return of({ pattern: "invalid pattern" });
     }
 
+    if (option.validator)
+    {
+      return option.validator(value);
+    }
+
     value = this.convert(option, value);
 
-    if (value == null || isNaN(value))
+    if (value == null)
     {
       return of(null);
     }
 
     return option.values?.(value)?.
-      pipe(map(values => values.length ? null : { value: "invalid value" })) ??
+      pipe(map(values => values.length === 1 ? null : { value: "invalid value" })) ??
       of(null);
   }
 
@@ -458,7 +479,20 @@ export class FilterComponent implements OnInit, OnChanges
         element.focus();
         element.select();
       }
-    }, 
-    100);
+    });
+  }
+
+  toggleQualifier(item: FilterItem, event?: Event): void
+  {
+    const qualifiers = item.option.qualifiers;
+
+    if (!item.option.readonly && qualifiers && item.qualifier)
+    {
+      const index = qualifiers.indexOf(item.qualifier) + 1;
+
+      item.qualifier = qualifiers[index < qualifiers.length ? index : 0];
+      event?.preventDefault();
+      event?.stopPropagation();
+    }
   }
 }

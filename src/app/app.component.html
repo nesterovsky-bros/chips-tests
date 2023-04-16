@@ -8,11 +8,13 @@
         <th>Title</th>
         <th>Name</th>
         <th>Value</th>
+        <th>Qualifier</th>
     </tr>
     <tr *ngFor="let item of items">
         <td>{{item.option.title}}</td>
         <td>{{item.option.name}}</td>
-        <td>{{item.value}}</td>
+        <td>{{item.value|json}}</td>
+        <td>{{item.qualifier?.value}}</td>
     </tr>
 </table>
 <br>

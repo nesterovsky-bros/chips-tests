@@ -1,6 +1,4 @@
-import { AfterViewChecked, Directive, ElementRef, OnDestroy, OnInit, Optional } from "@angular/core";
-import { NgModel } from "@angular/forms";
-import { Subscription } from "rxjs";
+import { AfterViewChecked, Directive, ElementRef, OnDestroy, OnInit } from "@angular/core";
 
 @Directive({ selector: "input[autoSize]" })
 export class AutoSizeDirective implements OnInit, OnDestroy, AfterViewChecked
