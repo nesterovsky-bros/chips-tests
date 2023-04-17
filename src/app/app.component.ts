@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { of } from 'rxjs';
-import { FilterItem, FilterOption, FilterQualifier } from './filter/filter.component';
+import { FilterItem, FilterOption, FilterQualifier } from './chips-filter/chips-filter.component';
 
 const branches = [172, 680];
 
@@ -46,6 +46,7 @@ const allOptions: FilterOption[] =
     name: "branch",
     title: "סניף",
     type: 'integer',
+    required: true,
     pattern: /\d{3}/,
     values: (value: any) =>
     {

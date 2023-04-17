@@ -14,7 +14,7 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatChipsModule} from '@angular/material/chips';
-import { FilterComponent } from './filter/filter.component';
+import { ChipsFilterComponent } from './chips-filter/chips-filter.component';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { ValidateFnDirective } from './validate-fn.directive';
 import { AutoSizeDirective } from './auto-size.directive';
@@ -22,7 +22,7 @@ import { AutoSizeDirective } from './auto-size.directive';
 @NgModule({
   declarations: [
     AppComponent,
-    FilterComponent,
+    ChipsFilterComponent,
     ValidateFnDirective,
     AutoSizeDirective
   ],

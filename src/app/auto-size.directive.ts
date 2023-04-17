@@ -1,6 +1,10 @@
 import { AfterViewChecked, Directive, ElementRef, OnDestroy, OnInit } from "@angular/core";
 
-@Directive({ selector: "input[autoSize]" })
+@Directive(
+{ 
+  selector: "input[autoSize]", 
+  exportAs: "autoSize" 
+})
 export class AutoSizeDirective implements OnInit, OnDestroy, AfterViewChecked
 {
   private view?: HTMLElement;
