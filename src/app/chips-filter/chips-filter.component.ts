@@ -12,13 +12,12 @@ import
 
 import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
 import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from '@angular/material/core';
-import { MatDatepickerInput } from '@angular/material/datepicker';
 
-export type ItemType = "string" | "integer" | "decimal" | "date";
+export type ItemType = "string" | "integer" | "decimal" | "date" | "tag";
 
 export interface FilterQualifier
 {
-  icon: string;
+  icon: string|null;
   value: any;
 }
 
@@ -34,6 +33,7 @@ export interface FilterOption
   pattern?: RegExp;
   required?: boolean;
   readonly?: boolean;
+  fixed?: boolean;
   allowMultiple?: boolean;
   values?: (value: any) => Observable<any[]>;
   format?: (value: any, withTitle?: boolean) => string;
@@ -44,9 +44,23 @@ export interface FilterOption
 export interface FilterItem
 {
   option: FilterOption;
-  value: any;
-  qualifier?: FilterQualifier; 
+  value?: any;
+  qualifier?: FilterQualifier|null; 
 }
+
+type WeakFilterItem = Omit<FilterItem, "option"> & {option?: FilterOption|string|null};
+
+const tagQualifiers: FilterQualifier[] =
+[
+  {
+    icon: "check",
+    value: true
+  },
+  {
+    icon: null,
+    value: false
+  }
+]
 
 @Component(
 {
@@ -76,9 +90,8 @@ export class ChipsFilterComponent implements OnChanges
 
   @ViewChild("optionValue") optionValue?: ElementRef<HTMLInputElement>;
   @ViewChild("optionModel") optionModel?: NgModel;
-  
-  itemOption?: FilterOption|string|null = null;
-  itemValue?: any|null = null;
+
+  item: WeakFilterItem = {};
   editItem?: FilterItem|null = null;
   popup: boolean = false;
   focusTimeout?: ReturnType<typeof setTimeout>|null = null;
@@ -103,13 +116,27 @@ export class ChipsFilterComponent implements OnChanges
     if ("options" in changes || "items" in changes)
     {
       this.updateOptions();
+
+      for(const item of this.items) 
+      {
+        if (item.option?.type === "tag" && !item.qualifier)
+        {
+          item.qualifier = tagQualifiers[item.value ? 0 : 1];
+        }  
+      }
+
       this.sortItems(this.items);
     }
   }
 
   getOption(coerse = true): FilterOption|null
   {
-    let option = this.itemOption;
+    return this.getItemOption(this.item, coerse);
+  }
+
+  getItemOption(item: WeakFilterItem, coerse = true): FilterOption|null
+  {
+    let option = item.option;
 
     if (option == null)
     {
@@ -151,7 +178,7 @@ export class ChipsFilterComponent implements OnChanges
 
       if (match)
       {
-        this.itemOption = match;
+        this.item.option = match;
       }
     }
 
@@ -191,11 +218,11 @@ export class ChipsFilterComponent implements OnChanges
     }
   }
 
-  format(option: FilterOption, value: any, withTitle = true): string
+  format(option: FilterOption, value: any, detailed = true): string
   {
     if (option.format)
     {
-      return option.format(value, withTitle);
+      return option.format(value, detailed);
     }
     else
     {
@@ -206,7 +233,7 @@ export class ChipsFilterComponent implements OnChanges
         this.dateAdapter.format(value, this.dateFormats.display.dateInput) :
         String(value ?? '');
 
-      return withTitle ? `${option.title}: ${text}` : text;
+      return detailed ? `${option.title}: ${text}` : text;
     }
   }
 
@@ -224,14 +251,25 @@ export class ChipsFilterComponent implements OnChanges
 
   resetItemValue(): void
   {
-    this.itemValue = null;
+    const option = this.getOption();
+    let qualifier = option?.qualifiers?.[0] ?? null;
+    let value = null;
+
+    if (option?.type === "tag")
+    {
+      qualifier ??= tagQualifiers[0];
+      value = qualifier.value;
+    }
+
+    this.item. value = value;
+    this.item.qualifier = qualifier;
   }
 
   remove(item: FilterItem): void 
   {
     const option = item.option;
 
-    if (!option.readonly)
+    if (option && !option.readonly && !option.fixed)
     {
       const items: FilterItem[] = [];
       let first: FilterItem|null = null;
@@ -239,7 +277,7 @@ export class ChipsFilterComponent implements OnChanges
       for(const other of this.items) 
       {
         if (other !== item && 
-          (!item.option.group || item.option.group !== other.option.group))
+          (!item.option!.group || item.option!.group !== other.option!.group))
         {
           items.push(other);
         }
@@ -249,7 +287,7 @@ export class ChipsFilterComponent implements OnChanges
         }
       }
 
-      this.itemOption = first?.option;
+      this.item.option = first?.option;
       this.resetItemValue();
       this.editItem = null;
       this.items = items;
@@ -259,15 +297,25 @@ export class ChipsFilterComponent implements OnChanges
     }
   }
 
-  edit(item: FilterItem): void
+  edit(item: FilterItem, event?: Event|null): void
   {
-    if (!item.option.readonly)
+    if (!item.option!.readonly)
     {
-      this.editItem = item;
-      this.itemOption = item.option;
-      this.itemValue = item.value;
-      this.updateOptions();
-      this.focusValue();
+      if (item.option!.type === "tag")
+      {
+        this.toggleQualifier(item, event);
+      }
+      else
+      {
+        this.editItem = item;
+        this.item.option = item.option;
+        this.item.value = item.value;
+        this.item.qualifier = item.qualifier;
+        this.updateOptions();
+        this.focusValue();
+        event?.preventDefault();
+        event?.stopPropagation();
+      }
     }
   }
 
@@ -280,11 +328,18 @@ export class ChipsFilterComponent implements OnChanges
       return;
     }
 
-    let value = this.convert(option, this.itemValue);
+    let value = this.convert(option, this.item.value);
 
-    if (value == null)
+    if (option.type === "tag")
     {
-      return;
+      this.item.option = null;
+    }
+    else
+    {
+      if (value == null)
+      {
+        return;
+      }
     }
 
     let editItem: FilterItem|null = null;
@@ -292,6 +347,7 @@ export class ChipsFilterComponent implements OnChanges
     if (this.editItem?.option === option)
     {
       this.editItem.value = value;
+      this.editItem.qualifier = this.item.qualifier;
     }
     else
     {
@@ -335,12 +391,28 @@ export class ChipsFilterComponent implements OnChanges
       for(let i = startGroup; i <= endGroup; ++i)
       {
         const other = options[i];
+        let qualifier = other.qualifiers?.[0];
+
         const item = 
         { 
           option: other, 
           value: i === index ? value : null,
-          qualifier: other.qualifiers?.[0]
+          qualifier: qualifier
         };
+
+        if (other.type === "tag")
+        {
+          if (!qualifier)
+          {
+            qualifier = tagQualifiers[value ? 0 : 1];
+            item.qualifier = qualifier;  
+          }
+
+          if (item.value == null)
+          {
+            item.value = item.qualifier?.value;
+          }
+        }
 
         if (other === option &&
           option.alternative &&
@@ -357,8 +429,9 @@ export class ChipsFilterComponent implements OnChanges
 
     if (editItem)
     {
-      this.itemOption = editItem.option;
-      this.itemValue = editItem.value;
+      this.item.option = editItem.option;
+      this.item.value = editItem.value;
+      this.item.qualifier = editItem.qualifier;
     }
     else
     {
@@ -443,7 +516,7 @@ export class ChipsFilterComponent implements OnChanges
     if (option && !this.filteredOptions.includes(option))
     {
       option = null;
-      this.itemOption = null;
+      this.item.option = null;
       this.resetItemValue();
     }
 
@@ -453,9 +526,9 @@ export class ChipsFilterComponent implements OnChanges
 
       for(const item of this.items) 
       {
-        if (item.value == null)
+        if (item.value == null && item.option.type !== "tag")
         {
-          this.itemOption = item.option;
+          this.item.option = item.option;
           this.editItem = item; 
 
           break;
@@ -464,7 +537,7 @@ export class ChipsFilterComponent implements OnChanges
 
       if (this.filteredOptions.length)
       {
-        this.itemOption ??= this.filteredOptions[0];
+        this.item.option ??= this.filteredOptions[0];
       }
       else
       {
@@ -503,6 +576,10 @@ export class ChipsFilterComponent implements OnChanges
 
       this.add();
     }
+    else if (option?.type === "tag")
+    {
+      setTimeout(() => this.add());
+    }
     else
     {
       this.editItem = null;
@@ -534,18 +611,31 @@ export class ChipsFilterComponent implements OnChanges
     });
   }
 
-  toggleQualifier(item: FilterItem, event?: Event): void
+  toggleQualifier(item: WeakFilterItem, event?: Event|null): void
   {
-    const qualifiers = item.option.qualifiers;
+    const option = this.getItemOption(item);
 
-    if (!item.option.readonly && qualifiers && item.qualifier)
+    if (!option)
+    {
+      return;
+    }
+
+    const tag = option.type === "tag";
+    const qualifiers = option.qualifiers ?? (tag ? tagQualifiers : null);
+
+    if (!option.readonly && qualifiers && item.qualifier)
     {
       const index = qualifiers.indexOf(item.qualifier) + 1;
 
       item.qualifier = qualifiers[index < qualifiers.length ? index : 0];
+
+      if (tag)
+      {
+        item.value = item.qualifier?.value; 
+      }
+
       event?.preventDefault();
       event?.stopPropagation();
-      this.cancel(false);
     }
   }
 

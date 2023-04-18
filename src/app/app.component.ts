@@ -31,37 +31,51 @@ const orderQualifiers: FilterQualifier[] =
   { 
     icon: "arrow_downward",
     value: "descending"
-  },
+  }
 ];
+
+const reportOption: FilterOption =   
+{
+  name: "report",
+  title: "דוח",
+  type: 'integer',
+  readonly: true
+};
+
+const branchOption: FilterOption =
+{
+  name: "branch",
+  title: "סניף",
+  type: 'integer',
+  required: true,
+  pattern: /\d{3}/,
+  values: (value: any) =>
+  {
+    let list = branches;
+
+    if (value != null)
+    {
+      value = String(value).trim().toUpperCase();
+
+      list = list.filter(item => String(item).trim().toUpperCase().includes(value));
+    }
+
+    return of(list);
+  } 
+};
+
+const tagOption: FilterOption =
+{
+  name: "myTag",
+  title: "tag",
+  fixed: true,
+  type: "tag"
+};
 
 const allOptions: FilterOption[] =
 [
-  {
-    name: "report",
-    title: "דוח",
-    type: 'integer',
-    readonly: true
-  },
-  {
-    name: "branch",
-    title: "סניף",
-    type: 'integer',
-    required: true,
-    pattern: /\d{3}/,
-    values: (value: any) =>
-    {
-      let list = branches;
-
-      if (value != null)
-      {
-        value = String(value).trim().toUpperCase();
-
-        list = list.filter(item => String(item).trim().toUpperCase().includes(value));
-      }
-
-      return of(list);
-    } 
-  },
+  reportOption,
+  branchOption,
   {
     name: "correctnessDate",
     alternative: "correctnessDate",
@@ -139,10 +153,10 @@ const allOptions: FilterOption[] =
 
       return of({ value: "Invalid value"});
     }
-  }
-];
+  },
 
-const [reportOption, branchOption, dateOption, accountOption] = allOptions;
+  tagOption
+];
 
 @Component({
   selector: 'app-root',
@@ -158,6 +172,7 @@ export class AppComponent {
   [
     { option: reportOption, value: 1203001 },
     { option: branchOption, value: 680 },
+    { option: tagOption, value: true },
   ];
 
   autohide: boolean = true;

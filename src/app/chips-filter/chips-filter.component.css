@@ -24,6 +24,11 @@
   display: flex;
 }
 
+.qualifier
+{
+  padding-inline-start: .5em;
+}
+
 mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active),
 .optionSelector.empty
 {
@@ -53,11 +58,6 @@ mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active),
 .optionSelector::ng-deep .mat-mdc-text-field-wrapper
 {
   padding: 0 .25em;
-}
-
-.optionSelector::ng-deep mat-select
-{
-  padding-inline-end: 2.5em;
 }
 
 mat-option::ng-deep .mdc-list-item__primary-text
