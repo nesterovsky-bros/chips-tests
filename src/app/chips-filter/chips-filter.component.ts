@@ -33,7 +33,6 @@ export interface FilterOption
   pattern?: RegExp;
   required?: boolean;
   readonly?: boolean;
-  fixed?: boolean;
   allowMultiple?: boolean;
   values?: (value: any) => Observable<any[]>;
   format?: (value: any, withTitle?: boolean) => string;
@@ -269,7 +268,7 @@ export class ChipsFilterComponent implements OnChanges
   {
     const option = item.option;
 
-    if (option && !option.readonly && !option.fixed)
+    if (!option.readonly && !option.required)
     {
       const items: FilterItem[] = [];
       let first: FilterItem|null = null;
@@ -396,7 +395,7 @@ export class ChipsFilterComponent implements OnChanges
         const item = 
         { 
           option: other, 
-          value: i === index ? value : null,
+          value: i === index || other.type == option.type ? value : null,
           qualifier: qualifier
         };
 
@@ -494,12 +493,13 @@ export class ChipsFilterComponent implements OnChanges
   updateOptions()
   {
     let option = this.getOption();
+    const editOption = this.editItem?.option;
 
     const alternatives = new Map(
       this.items.
         filter(item => 
           item.option.alternative && 
-          this.editItem?.option.alternative !== item.option.alternative).
+          item.option.alternative !== editOption?.alternative).
         map(item => [item.option.alternative!, item.option.group ?? null]));
 
     const used = new Set(
@@ -552,9 +552,13 @@ export class ChipsFilterComponent implements OnChanges
     {
       const option = this.filteredOptions[i];
 
-      if (option !== this.editItem?.option &&
-        option.group && 
-        option.group === this.filteredOptions[i - 1].group)
+      if (option !== editOption &&
+        ((option.group && 
+        option.group === this.filteredOptions[i - 1].group ||
+        option.alternative &&
+        option.alternative === editOption?.alternative &&
+        !option.required &&
+        editOption.required)))
       {
         this.filteredOptions.splice(i--, 1);        
       }
@@ -566,10 +570,18 @@ export class ChipsFilterComponent implements OnChanges
   optionChange(): void
   {
     const option = this.getOption();
+    const editOption = this.editItem?.option;
 
-    if (option && option.alternative && option.alternative == this.editItem?.option.alternative)
+    if (option && option.alternative && option.alternative == editOption?.alternative)
     {
-      if (option.type !== this.editItem.option.type)
+      if (editOption.required && !option.required)
+      {
+        setTimeout(() => this.item.option = editOption);
+
+        return;
+      }
+
+      if (option.type !== editOption.type)
       {
         this.resetItemValue();
       }

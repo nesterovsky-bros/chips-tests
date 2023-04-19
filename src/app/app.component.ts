@@ -68,7 +68,7 @@ const tagOption: FilterOption =
 {
   name: "myTag",
   title: "tag",
-  fixed: true,
+  required: true,
   type: "tag"
 };
 
@@ -80,21 +80,24 @@ const allOptions: FilterOption[] =
     name: "correctnessDate",
     alternative: "correctnessDate",
     title: "תאריך",
-    type: 'date'
+    type: 'date',
+    required: true
   },
   {
     name: "correctnessDate.from",
     alternative: "correctnessDate",
     group: "correctnessDate.range",
     title: "תאריך מ",
-    type: 'date'
+    type: 'date',
+    required: true
   },
   {
     name: "correctnessDate.to",
     alternative: "correctnessDate",
     group: "correctnessDate.range",
     title: "תאריך עד",
-    type: 'date'
+    type: 'date',
+    required: true
   },
   {
     name: "account",

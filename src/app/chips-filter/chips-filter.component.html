@@ -12,7 +12,7 @@
                 <span>{{format(current.option, current.value, false)}}</span>
             </ng-template>
             <button matChipRemove
-                *ngIf="!current.option.readonly && !current.option.fixed"><mat-icon>cancel</mat-icon></button>
+                *ngIf="!current.option.readonly && !current.option.required"><mat-icon>cancel</mat-icon></button>
         </mat-chip-row>
     </ng-container>
 
