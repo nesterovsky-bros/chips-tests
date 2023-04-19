@@ -574,13 +574,6 @@ export class ChipsFilterComponent implements OnChanges
 
     if (option && option.alternative && option.alternative == editOption?.alternative)
     {
-      if (editOption.required && !option.required)
-      {
-        setTimeout(() => this.item.option = editOption);
-
-        return;
-      }
-
       if (option.type !== editOption.type)
       {
         this.resetItemValue();
