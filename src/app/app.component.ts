@@ -69,7 +69,8 @@ const tagOption: FilterOption =
   name: "myTag",
   title: "tag",
   required: true,
-  type: "tag"
+  type: "tag",
+  order: 1
 };
 
 const allOptions: FilterOption[] =
@@ -130,6 +131,7 @@ const allOptions: FilterOption[] =
     name: "order",
     title: "מיון",
     type: 'string',
+    order: 1,
     qualifiers: orderQualifiers,
     values: () => of(sortableColumns),
     format: function(value: Column|string|null, withTitle?: boolean)

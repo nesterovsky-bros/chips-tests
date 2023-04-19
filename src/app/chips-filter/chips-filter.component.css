@@ -29,6 +29,11 @@
   padding-inline-start: .5em;
 }
 
+.rest
+{
+  flex-grow: 1;
+}
+
 mat-chip-grid:not(:focus-within):not(:hover) .optionSelector:not(.active),
 .optionSelector.empty
 {

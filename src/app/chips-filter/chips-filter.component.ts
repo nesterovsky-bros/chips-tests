@@ -3,11 +3,15 @@ import { map, Observable, of } from 'rxjs';
 import 
 { 
   Component,
-  ElementRef, EventEmitter, 
-  Inject, Input, 
+  ElementRef,
+  EventEmitter, 
+  Inject, 
+  Input, 
   OnChanges,
-  Optional, Output, 
-  SimpleChanges, ViewChild 
+  Optional, 
+  Output, 
+  SimpleChanges, 
+  ViewChild 
 } from '@angular/core';
 
 import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
@@ -17,13 +21,13 @@ export type ItemType = "string" | "integer" | "decimal" | "date" | "tag";
 
 export interface FilterQualifier
 {
-  icon: string|null;
-  value: any;
+  icon?: string|null;
+  value?: any;
 }
 
 export interface FilterOption
 {
-  name: string;
+  name?: string;
   group?: string;
   alternative?: string;
 
@@ -38,6 +42,7 @@ export interface FilterOption
   format?: (value: any, withTitle?: boolean) => string;
   convert?: (value: any) => any;
   validator?: (value: any) => Observable<ValidationErrors | null>;
+  order?: number;
 }
 
 export interface FilterItem
@@ -114,8 +119,6 @@ export class ChipsFilterComponent implements OnChanges
   {
     if ("options" in changes || "items" in changes)
     {
-      this.updateOptions();
-
       for(const item of this.items) 
       {
         if (item.option?.type === "tag" && !item.qualifier)
@@ -124,6 +127,7 @@ export class ChipsFilterComponent implements OnChanges
         }  
       }
 
+      this.updateOptions();
       this.sortItems(this.items);
     }
   }
@@ -177,7 +181,7 @@ export class ChipsFilterComponent implements OnChanges
 
       if (match)
       {
-        this.item.option = match;
+        item.option = match;
       }
     }
 
@@ -415,7 +419,7 @@ export class ChipsFilterComponent implements OnChanges
 
         if (other === option &&
           option.alternative &&
-          option.alternative === editItem?.option.alternative)
+          option.alternative === this.editItem?.option.alternative)
         {
           editItem = item;
         }
@@ -637,6 +641,11 @@ export class ChipsFilterComponent implements OnChanges
       if (tag)
       {
         item.value = item.qualifier?.value; 
+      }
+
+      if (this.items.includes(item as FilterItem))
+      {
+        this.itemsChange.emit(this.items);
       }
 
       event?.preventDefault();
