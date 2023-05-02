@@ -66,6 +66,8 @@ const tagQualifiers: FilterQualifier[] =
   }
 ]
 
+export type OptionsStyle = "visible" | "hideInactive" | "shadowInactive";
+
 @Component(
 {
   selector: 'chips-filter',
@@ -76,7 +78,7 @@ const tagQualifiers: FilterQualifier[] =
 export class ChipsFilterComponent implements OnChanges
 {
   @Input()
-  autohideOptions: boolean = false;
+  optionsStyle: OptionsStyle = "hideInactive";
 
   @Input()
   options: FilterOption[] = [];
@@ -92,8 +94,9 @@ export class ChipsFilterComponent implements OnChanges
 
   public filteredOptions: FilterOption[] = [];
 
+  @ViewChild("optionType") optionType?: ElementRef<HTMLInputElement>;
   @ViewChild("optionValue") optionValue?: ElementRef<HTMLInputElement>;
-  @ViewChild("optionModel") optionModel?: NgModel;
+  @ViewChild("optionValue", { read: NgModel }) optionModel?: NgModel;
 
   item: WeakFilterItem = {};
   editItem?: FilterItem|null = null;
@@ -102,10 +105,11 @@ export class ChipsFilterComponent implements OnChanges
 
   get active(): boolean
   {
-    return !this.autohideOptions || this.popup || !!this.editItem || this.focusTimeout != null;
+    return this.popup || !!this.editItem || this.focusTimeout != null;
   }
 
   constructor(
+    private element: ElementRef<HTMLElement>,
     @Optional() 
     private dateAdapter: DateAdapter<any>|null,
     @Optional() @Inject(MAT_DATE_FORMATS) 
@@ -156,34 +160,31 @@ export class ChipsFilterComponent implements OnChanges
       return null;
     }
 
-    option = option.trim().toUpperCase();
-
     let match: FilterOption|null = null;
+    const text = option.trim().toUpperCase();
 
-    if (option)
+    if (text)
     {
       for(const item of this.filteredOptions) 
       {
         const title = item.title.trim().toUpperCase();
 
-        if (title == option)
+        if (title == text)
         {
           match = item;
 
           break;
         }
-        else if (!match && title.startsWith(option))
+        else if (!match && title.startsWith(text))
         {
           match = item;
         }
         // No more cases.
       }
-
-      if (match)
-      {
-        item.option = match;
-      }
     }
+
+    match ??= this.filteredOptions[0];
+    item.option = match;
 
     return match;
   }
@@ -300,13 +301,13 @@ export class ChipsFilterComponent implements OnChanges
     }
   }
 
-  edit(item: FilterItem, event?: Event|null): void
+  edit(item: FilterItem, event?: Event|null, focusType?: boolean): boolean
   {
     if (!item.option!.readonly)
     {
       if (item.option!.type === "tag")
       {
-        this.toggleQualifier(item, event);
+        return this.toggleQualifier(item, event);
       }
       else
       {
@@ -315,11 +316,15 @@ export class ChipsFilterComponent implements OnChanges
         this.item.value = item.value;
         this.item.qualifier = item.qualifier;
         this.updateOptions();
-        this.focusValue();
+        this.focusValue(focusType);
         event?.preventDefault();
         event?.stopPropagation();
+
+        return true;
       }
     }
+
+    return false;
   }
 
   add()
@@ -598,7 +603,7 @@ export class ChipsFilterComponent implements OnChanges
     }
   }
 
-  focusValue(): void
+  focusValue(focusType?: boolean): void
   {
     if (this.focusTimeout != null)
     {
@@ -610,23 +615,22 @@ export class ChipsFilterComponent implements OnChanges
     {
       this.focusTimeout = null;
 
-      if (this.optionValue)
-      {
-        const element = this.optionValue.nativeElement;
+      const element = focusType ?
+        this.optionType?.nativeElement :
+        this.optionValue?.nativeElement;
 
-        element.focus();
-        element.select();
-      }
+      element?.focus();
+      element?.select();
     });
   }
 
-  toggleQualifier(item: WeakFilterItem, event?: Event|null): void
+  toggleQualifier(item: WeakFilterItem, event?: Event|null): boolean
   {
     const option = this.getItemOption(item);
 
     if (!option)
     {
-      return;
+      return false;
     }
 
     const tag = option.type === "tag";
@@ -650,7 +654,11 @@ export class ChipsFilterComponent implements OnChanges
 
       event?.preventDefault();
       event?.stopPropagation();
+
+      return true;
     }
+
+    return false;
   }
 
   sortItems(items: FilterItem[]): void
@@ -671,5 +679,36 @@ export class ChipsFilterComponent implements OnChanges
     }
 
     items.sort((f, s) => (index.get(f.option) ?? -1) - (index.get(s.option) ?? -1));
+  }
+
+  togglePopup(value: boolean)
+  {
+    this.popup = value;
+
+    this.focusTimeout ??= setTimeout(() => 
+    {
+      this.focusTimeout = null;
+
+      if (!this.element.nativeElement.matches(":focus-within"))
+      {
+        this.cancel(false);
+      }
+    });
+  }
+
+  updateFocus()
+  {
+    this.focusTimeout ??= setTimeout(() => 
+    {
+      this.focusTimeout = null;
+
+      if (!this.popup && 
+        !this.element.nativeElement.matches(":focus-within") &&
+        this.editItem &&
+        this.editItem.value === this.item.value)
+      {
+        this.cancel(false);
+      }
+    });
   }
 }

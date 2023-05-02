@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { of } from 'rxjs';
-import { FilterItem, FilterOption, FilterQualifier } from './chips-filter/chips-filter.component';
+import { FilterItem, FilterOption, FilterQualifier, OptionsStyle } from './chips-filter/chips-filter.component';
 
 const branches = [172, 680];
 
@@ -180,6 +180,6 @@ export class AppComponent {
     { option: tagOption, value: true },
   ];
 
-  autohide: boolean = true;
+  optionsStyle: OptionsStyle = "hideInactive";
   searchCount: number = 0;
 }

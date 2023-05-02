@@ -1,6 +1,15 @@
-<chips-filter dir="rtl" [options]="options" [(items)]="items" [autohideOptions]="autohide" (search)="searchCount = searchCount + 1"></chips-filter>
+<chips-filter dir="rtl" [options]="options" [(items)]="items" [optionsStyle]="optionsStyle" (search)="searchCount = searchCount + 1"></chips-filter>
 <div style="padding: 1em;">
-<div>Autohide: <input type="checkbox" [(ngModel)]="autohide"></div>
+<div>
+    <mat-form-field appearance="fill" subscriptSizing="dynamic">
+        <mat-label>Options style</mat-label>
+        <mat-select [(ngModel)]="optionsStyle">
+            <mat-option value="visible">Visible</mat-option>
+            <mat-option value="hideInactive">Hide inactive</mat-option>
+            <mat-option value="shadowInactive">Shadow inactive</mat-option>
+        </mat-select>
+    </mat-form-field>    
+</div>
 <br>
 <div>Selected items:</div>
 <table border="1">
