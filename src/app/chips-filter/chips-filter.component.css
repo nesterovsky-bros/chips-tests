@@ -77,7 +77,7 @@ mat-option::ng-deep .mdc-list-item__primary-text
 .chipValue
 {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
 .optionValue

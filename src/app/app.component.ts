@@ -96,7 +96,7 @@ const allOptions: FilterOption[] =
     name: "correctnessDate.to",
     alternative: "correctnessDate",
     group: "correctnessDate.range",
-    title: "תאריך עד",
+    title: "עד",
     type: 'date',
     required: true
   },
