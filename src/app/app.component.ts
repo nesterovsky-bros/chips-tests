@@ -108,7 +108,7 @@ const allOptions: FilterOption[] =
   },
   {
     name: "amount",
-    alternative: "amount",
+    //alternative: "amount",
     title: "סכום",
     type: 'decimal'
   },

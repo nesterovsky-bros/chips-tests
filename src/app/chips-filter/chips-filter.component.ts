@@ -38,7 +38,7 @@ export interface FilterOption
   required?: boolean;
   readonly?: boolean;
   allowMultiple?: boolean;
-  values?: (value: any) => Observable<any[]>;
+  values?: (value: any) => Observable<readonly any[]>;
   format?: (value: any, withTitle?: boolean) => string;
   convert?: (value: any) => any;
   validator?: (value: any) => Observable<ValidationErrors | null>;
@@ -265,7 +265,7 @@ export class ChipsFilterComponent implements OnChanges
       value = qualifier.value;
     }
 
-    this.item. value = value;
+    this.item.value = value;
     this.item.qualifier = qualifier;
   }
 
@@ -327,7 +327,7 @@ export class ChipsFilterComponent implements OnChanges
     return false;
   }
 
-  add()
+  add(keepEdit?: boolean)
   {
     const option = this.getOption();
 
@@ -354,6 +354,11 @@ export class ChipsFilterComponent implements OnChanges
 
     if (this.editItem?.option === option)
     {
+      if (keepEdit)
+      {
+        editItem = this.editItem;
+      }
+
       this.editItem.value = value;
       this.editItem.qualifier = this.item.qualifier;
     }
@@ -433,6 +438,8 @@ export class ChipsFilterComponent implements OnChanges
       }
     }
 
+    const lastOption = this.editItem?.option;
+
     this.editItem = editItem;
 
     if (editItem)
@@ -446,7 +453,7 @@ export class ChipsFilterComponent implements OnChanges
       this.resetItemValue();
     }
 
-    this.updateOptions();
+    this.updateOptions(lastOption);
     this.sortItems(this.items);
     this.itemsChange.emit(this.items);
     this.focusValue();
@@ -499,7 +506,7 @@ export class ChipsFilterComponent implements OnChanges
       of(null);
   }
 
-  updateOptions()
+  updateOptions(lastOption?: FilterOption|null)
   {
     let option = this.getOption();
     const editOption = this.editItem?.option;
@@ -518,9 +525,12 @@ export class ChipsFilterComponent implements OnChanges
 
     this.filteredOptions = this.options.
       filter(item => !used.has(item) && 
-        (!item.alternative || 
-          !alternatives.has(item.alternative) ||
-          alternatives.get(item.alternative) == item.group));
+        (!editOption ?
+          (!item.alternative || 
+            !alternatives.has(item.alternative) ||
+            alternatives.get(item.alternative) == item.group) :
+        (editOption == item) ||
+        (editOption.alternative && (editOption.alternative === item.alternative))));
 
     if (option && !this.filteredOptions.includes(option))
     {
@@ -533,14 +543,47 @@ export class ChipsFilterComponent implements OnChanges
     {
       this.resetItemValue();
 
-      for(const item of this.items) 
+      if (lastOption?.group)
       {
-        if (item.value == null && item.option.type !== "tag")
-        {
-          this.item.option = item.option;
-          this.editItem = item; 
+        let found = false;
 
-          break;
+        for(const item of this.items)
+        {
+          if (!found)
+          {
+            if (item.option === lastOption)
+            {
+              found = true;
+            }
+          }
+          else
+          {
+            if (item.option.group === lastOption.group &&
+              !item.option.readonly &&
+              item.option.type !== "tag")
+            {
+              this.item.option = item.option;
+              this.item.value = item.value;
+              this.item.qualifier = item.qualifier;
+              this.editItem = item; 
+    
+              break;
+            }
+          }
+        }
+      }
+
+      if (!this.editItem)
+      {
+        for(const item of this.items) 
+        {
+          if (item.value == null && item.option.type !== "tag")
+          {
+            this.item.option = item.option;
+            this.editItem = item; 
+
+            break;
+          }
         }
       }
 
@@ -588,11 +631,11 @@ export class ChipsFilterComponent implements OnChanges
         this.resetItemValue();
       }
 
-      this.add();
+      this.add(true);
     }
     else if (option?.type === "tag")
     {
-      setTimeout(() => this.add());
+      setTimeout(() => this.add(true));
     }
     else
     {

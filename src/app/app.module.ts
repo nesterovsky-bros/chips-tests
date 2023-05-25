@@ -9,6 +9,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatButtonModule} from '@angular/material/button'
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatMenuModule} from '@angular/material/menu'
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -37,6 +38,7 @@ import { AutoSizeDirective } from './auto-size.directive';
     MatInputModule,
     MatSelectModule,
     MatAutocompleteModule,
+    MatMenuModule,
     MatDatepickerModule,
     MatMomentDateModule,
     MatChipsModule

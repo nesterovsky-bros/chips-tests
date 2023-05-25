@@ -9,7 +9,7 @@
                 <span (click)="toggleQualifier(current, $event)">{{current.option.title}}</span>
             </ng-container>
             <ng-template #valueChip>
-                <span (click)="toggleQualifier(current, $event) || edit(current, $event, true)">{{current.option.title}}</span>: 
+                <span [class.chipTitle]="!current.qualifier?.icon && current.option.alternative" (click)="toggleQualifier(current, $event) || edit(current, $event, !current.qualifier?.icon && !!current.option.alternative)">{{current.option.title}}:</span> 
                 <span class="chipValue">{{format(current.option, current.value, false)}}</span>
             </ng-template>
             <button matChipRemove
@@ -18,6 +18,7 @@
     </ng-container>
 
     <ng-container *ngIf="!editItem" [ngTemplateOutlet]="optionSelector"></ng-container>
+
     <div class="rest"></div>
 </mat-chip-grid>
 <input type="text" hidden [matChipInputFor]="chipGrid">
@@ -34,7 +35,7 @@
         <mat-form-field subscriptSizing="dynamic">
             <input #optionType autoSize matInput class="option" type="text" [(ngModel)]="item.option" (change)="optionChange()"
                 (keydown.enter)="optionChange()" [matAutocomplete]="itemOptionAutocomplete"
-                [readonly]="filteredOptions.length < 2" />:
+                [readonly]="filteredOptions.length < 2 || (selected.option?.required && !selected.option?.alternative)"/>:
             <mat-autocomplete #itemOptionAutocomplete="matAutocomplete" panelWidth="auto"
                 (optionSelected)="optionChange()" [displayWith]="formatOption" (opened)="togglePopup(true)"
                 (closed)="togglePopup(false)">
