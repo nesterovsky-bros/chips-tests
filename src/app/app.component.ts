@@ -82,7 +82,7 @@ const allOptions: FilterOption[] =
     alternative: "correctnessDate",
     title: "תאריך",
     type: 'date',
-    required: true
+    //required: true
   },
   {
     name: "correctnessDate.from",
@@ -90,7 +90,7 @@ const allOptions: FilterOption[] =
     group: "correctnessDate.range",
     title: "תאריך מ",
     type: 'date',
-    required: true
+    //required: true
   },
   {
     name: "correctnessDate.to",
@@ -98,7 +98,7 @@ const allOptions: FilterOption[] =
     group: "correctnessDate.range",
     title: "עד",
     type: 'date',
-    required: true
+    //required: true
   },
   {
     name: "account",
@@ -180,6 +180,6 @@ export class AppComponent {
     { option: tagOption, value: true },
   ];
 
-  optionsStyle: OptionsStyle = "hideInactive";
+  optionsStyle: OptionsStyle = "filterIcon";
   searchCount: number = 0;
 }

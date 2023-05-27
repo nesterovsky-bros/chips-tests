@@ -16,6 +16,7 @@ import
 
 import { AbstractControl, NgModel, ValidationErrors } from '@angular/forms';
 import { DateAdapter, MatDateFormats, MAT_DATE_FORMATS } from '@angular/material/core';
+import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 
 export type ItemType = "string" | "integer" | "decimal" | "date" | "tag";
 
@@ -66,7 +67,7 @@ const tagQualifiers: FilterQualifier[] =
   }
 ]
 
-export type OptionsStyle = "visible" | "hideInactive" | "shadowInactive";
+export type OptionsStyle = "visible" | "hideInactive" | "shadowInactive" | "filterIcon";
 
 @Component(
 {
@@ -78,7 +79,7 @@ export type OptionsStyle = "visible" | "hideInactive" | "shadowInactive";
 export class ChipsFilterComponent implements OnChanges
 {
   @Input()
-  optionsStyle: OptionsStyle = "hideInactive";
+  optionsStyle: OptionsStyle = "filterIcon";
 
   @Input()
   options: FilterOption[] = [];
@@ -92,12 +93,17 @@ export class ChipsFilterComponent implements OnChanges
   @Output()
   readonly search = new EventEmitter<FilterItem[]>();
 
+  public preFilteredOptions: FilterOption[] = [];
   public filteredOptions: FilterOption[] = [];
 
+  @ViewChild("filter", { read: ElementRef }) filter?: ElementRef<HTMLElement>;
   @ViewChild("optionType") optionType?: ElementRef<HTMLInputElement>;
+  @ViewChild("optionType", {read: MatAutocompleteTrigger}) optionTypeAutocompleteTrigger?: MatAutocompleteTrigger;
   @ViewChild("optionValue") optionValue?: ElementRef<HTMLInputElement>;
   @ViewChild("optionValue", { read: NgModel }) optionModel?: NgModel;
+  @ViewChild("optionValue", {read: MatAutocompleteTrigger}) optionValueAutocompleteTrigger?: MatAutocompleteTrigger;
 
+  showItem: boolean = false;
   item: WeakFilterItem = {};
   editItem?: FilterItem|null = null;
   popup: boolean = false;
@@ -133,6 +139,10 @@ export class ChipsFilterComponent implements OnChanges
 
       this.updateOptions();
       this.sortItems(this.items);
+    }
+    else if ("optionsStyle" in changes)
+    {
+      this.showItem = this.optionsStyle !== "filterIcon";
     }
   }
 
@@ -296,7 +306,8 @@ export class ChipsFilterComponent implements OnChanges
       this.editItem = null;
       this.items = items;
       this.updateOptions();
-      this.focusValue();
+      this.showItem = this.optionsStyle !== "filterIcon";
+      this.focus();
       this.itemsChange.emit(this.items);
     }
   }
@@ -316,7 +327,7 @@ export class ChipsFilterComponent implements OnChanges
         this.item.value = item.value;
         this.item.qualifier = item.qualifier;
         this.updateOptions();
-        this.focusValue(focusType);
+        this.focus(focusType);
         event?.preventDefault();
         event?.stopPropagation();
 
@@ -327,13 +338,13 @@ export class ChipsFilterComponent implements OnChanges
     return false;
   }
 
-  add(keepEdit?: boolean)
+  add(keepEdit?: boolean): boolean
   {
     const option = this.getOption();
 
     if (!option || this.optionModel?.invalid)
     {
-      return;
+      return false;
     }
 
     let value = this.convert(option, this.item.value);
@@ -346,7 +357,7 @@ export class ChipsFilterComponent implements OnChanges
     {
       if (value == null)
       {
-        return;
+        return false;
       }
     }
 
@@ -366,7 +377,7 @@ export class ChipsFilterComponent implements OnChanges
     {
       if (!this.filteredOptions.includes(option))
       {
-        return;
+        return false;
       }
 
       if (!option.allowMultiple && option.alternative)
@@ -456,7 +467,10 @@ export class ChipsFilterComponent implements OnChanges
     this.updateOptions(lastOption);
     this.sortItems(this.items);
     this.itemsChange.emit(this.items);
-    this.focusValue();
+    this.showItem = this.optionsStyle !== "filterIcon";
+    this.focus();
+
+    return true;
   }
 
   cancel(focus = false): void
@@ -469,9 +483,18 @@ export class ChipsFilterComponent implements OnChanges
 
       if (focus)
       {
-        this.focusValue();
+        this.focus();
       }
     }
+    else
+    {
+      if (focus)
+      {
+        this.filter?.nativeElement.focus();
+      }
+    }
+
+    this.showItem = this.optionsStyle !== "filterIcon";
   }
 
   validate(control: AbstractControl): Observable<ValidationErrors|null>
@@ -506,7 +529,33 @@ export class ChipsFilterComponent implements OnChanges
       of(null);
   }
 
-  updateOptions(lastOption?: FilterOption|null)
+  orderOptions(): void
+  {
+    const option = this.item.option;
+    const title = typeof option === "string" ? option : option?.title;
+    const text = title?.trim().toUpperCase();
+
+    this.filteredOptions = this.preFilteredOptions.
+      map((option, index) => ({option, index})).
+      sort((a, b) =>
+      {
+        if (text != null)
+        {
+          const aMatch = a.option.title.toUpperCase().includes(text);
+          const bMatch = b.option.title.toUpperCase().includes(text);
+  
+          if (aMatch != bMatch)
+          {
+            return aMatch ? -1 : 1;
+          }
+        }
+  
+        return a.index - b.index;
+      }).
+      map(item => item.option);
+  }
+
+  updateOptions(lastOption?: FilterOption|null): void
   {
     let option = this.getOption();
     const editOption = this.editItem?.option;
@@ -523,7 +572,7 @@ export class ChipsFilterComponent implements OnChanges
         filter(item => !item.option.allowMultiple && item !== this.editItem).
         map(item => item.option));
 
-    this.filteredOptions = this.options.
+    this.preFilteredOptions = this.options.
       filter(item => !used.has(item) && 
         (!editOption ?
           (!item.alternative || 
@@ -532,7 +581,7 @@ export class ChipsFilterComponent implements OnChanges
         (editOption == item) ||
         (editOption.alternative && (editOption.alternative === item.alternative))));
 
-    if (option && !this.filteredOptions.includes(option))
+    if (option && !this.preFilteredOptions.includes(option))
     {
       option = null;
       this.item.option = null;
@@ -587,35 +636,36 @@ export class ChipsFilterComponent implements OnChanges
         }
       }
 
-      if (this.filteredOptions.length)
+      if (this.preFilteredOptions.length)
       {
-        this.item.option ??= this.filteredOptions[0];
+        this.item.option ??= this.preFilteredOptions[0];
       }
       else
       {
         if (this.editItem)
         {
-          this.filteredOptions.push(this.editItem.option);
+          this.preFilteredOptions.push(this.editItem.option);
         }
       }
     }
 
-    for(let i = 1; i < this.filteredOptions.length; ++i)
+    for(let i = 1; i < this.preFilteredOptions.length; ++i)
     {
-      const option = this.filteredOptions[i];
+      const option = this.preFilteredOptions[i];
 
       if (option !== editOption &&
         ((option.group && 
-        option.group === this.filteredOptions[i - 1].group ||
+        option.group === this.preFilteredOptions[i - 1].group ||
         option.alternative &&
         option.alternative === editOption?.alternative &&
         !option.required &&
         editOption.required)))
       {
-        this.filteredOptions.splice(i--, 1);        
+        this.preFilteredOptions.splice(i--, 1);        
       }
     }
 
+    this.orderOptions();
     this.optionModel?.control.markAsPristine();
   }
 
@@ -642,11 +692,11 @@ export class ChipsFilterComponent implements OnChanges
       this.editItem = null;
       this.resetItemValue();
       this.updateOptions();
-      this.focusValue();
+      this.focus();
     }
   }
 
-  focusValue(focusType?: boolean): void
+  focus(focusType?: boolean): void
   {
     if (this.focusTimeout != null)
     {
@@ -659,11 +709,22 @@ export class ChipsFilterComponent implements OnChanges
       this.focusTimeout = null;
 
       const element = focusType ?
-        this.optionType?.nativeElement :
+        this.optionType?.nativeElement ?? this.optionValue?.nativeElement :
         this.optionValue?.nativeElement;
 
-      element?.focus();
-      element?.select();
+      (focusType ?
+        this.optionValueAutocompleteTrigger :
+        this.optionTypeAutocompleteTrigger)?.closePanel();
+
+      if (element)
+      {
+        element.focus();
+        element.select();
+      }
+      else
+      {
+        this.filter?.nativeElement.focus();
+      }
     });
   }
 
@@ -737,6 +798,43 @@ export class ChipsFilterComponent implements OnChanges
         this.cancel(false);
       }
     });
+  }
+
+  toggleFilter(event?: Event|null)
+  {
+    if (this.optionsStyle === "filterIcon")
+    {
+      if (this.editItem)
+      {
+        if (!this.add())
+        {
+          this.cancel(false);
+        }
+
+        this.showItem = true;
+        this.focus(true);
+      }
+      else
+      {
+        this.showItem = !this.showItem;
+
+        if (this.showItem)
+        {
+          this.focus(true);
+        }
+        else
+        {
+          ((event?.target as HTMLElement) ?? this.element.nativeElement)?.focus();
+        }
+      }
+    }
+    else
+    {
+      this.showItem = true;
+    }
+
+    event?.preventDefault();
+    event?.stopPropagation();
   }
 
   updateFocus()
