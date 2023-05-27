@@ -40,21 +40,19 @@
             (click)="toggleQualifier(item, $event)">{{item.qualifier!.icon}}</mat-icon>
 
         <span *ngIf="filteredOptions.length < 2; else valueType"
-            (mousedown)="focus(); $event.preventDefault()">{{selected.option?.title}}:</span>
+            (mousedown)="focus(); $event.preventDefault()">{{selected.option?.title}}: </span>
         <ng-template #valueType>
             <mat-form-field subscriptSizing="dynamic" (mousedown)="focus(true)">
                 <input #optionType autoSize matInput class="option" type="text" [(ngModel)]="item.option"
                     (ngModelChange)="orderOptions()" (change)="optionChange()" (keydown.enter)="optionChange()"
-                    [matAutocomplete]="optionTypeAutocomplete" />:
+                    [matAutocomplete]="optionTypeAutocomplete" />
                 <mat-autocomplete #optionTypeAutocomplete="matAutocomplete" panelWidth="auto"
                     [hideSingleSelectionIndicator]="true"
                     (optionSelected)="optionChange()" [displayWith]="formatOption" (opened)="togglePopup(true)"
                     (closed)="togglePopup(false)">
-                    <mat-option *ngFor="let option of filteredOptions" [value]="option">
-                        {{option.title}}
-                    </mat-option>
+                    <mat-option *ngFor="let option of filteredOptions" [value]="option">{{option.title}}</mat-option>
                 </mat-autocomplete>
-            </mat-form-field>
+            </mat-form-field>: 
         </ng-template>
 
         <ng-container *ngSwitchCase="'string'" [ngSwitch]="!!selected.option!.values">
