@@ -1,3 +1,7 @@
+# Demo
+
+The demo of chips filter can be found at https://nesterovsky-bros.github.io/chips-tests/
+
 # ChipsTests
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.2.0.
