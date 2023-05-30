@@ -82,6 +82,9 @@ export class ChipsFilterComponent implements OnChanges
   optionsStyle: OptionsStyle = "filterIcon";
 
   @Input()
+  searchIcon?: string|null = "search"; 
+
+  @Input()
   options: FilterOption[] = [];
 
   @Input()

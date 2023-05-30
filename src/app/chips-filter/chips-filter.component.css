@@ -20,6 +20,11 @@
   font-size: inherit;
 }
 
+:host::ng-deep .mat-mdc-form-field-subscript-wrapper
+{
+  display: none;
+}
+
 :host::ng-deep .mdc-evolution-chip-set__chips
 {
   align-items: center;
@@ -96,7 +101,7 @@ mat-option::ng-deep .mdc-list-item__primary-text
 
 .optionValue
 {
-  min-width: 1em;
+  min-width: 3em;
   max-width: 20em;
 }
 
@@ -105,14 +110,4 @@ mat-option::ng-deep .mdc-list-item__primary-text
 .dateOption
 {
   direction: ltr;
-}
-
-.dateOption
-{
-  min-width: 3em;
-}
-
-.decimalOption
-{
-  min-width: 3em;
 }

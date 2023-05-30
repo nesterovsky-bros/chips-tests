@@ -28,8 +28,8 @@
     <div class="rest"></div>
 </mat-chip-grid>
 <input type="text" hidden [matChipInputFor]="chipGrid">
-<button mat-icon-button (click)="cancel(false); search.emit(items)">
-    <mat-icon>search</mat-icon>
+<button *ngIf="searchIcon" mat-icon-button (click)="cancel(false); search.emit(items)">
+    <mat-icon>{{searchIcon}}</mat-icon>
 </button>
 
 <ng-template #optionSelector>
@@ -37,12 +37,13 @@
         [ngSwitch]="selected.option?.type" [style.order]="editItem && selected.option?.order"
         [class]="active ? null : optionsStyle" (click)="$event.stopPropagation()" (focusout)="updateFocus()">
         <mat-icon class="qualifier" [inline]="true" *ngIf="item.qualifier?.icon"
+            (keydown.enter)="toggleQualifier(item, $event)"
             (click)="toggleQualifier(item, $event)">{{item.qualifier!.icon}}</mat-icon>
 
         <span *ngIf="filteredOptions.length < 2; else valueType"
             (mousedown)="focus(); $event.preventDefault()">{{selected.option?.title}}: </span>
         <ng-template #valueType>
-            <mat-form-field subscriptSizing="dynamic" (mousedown)="focus(true)">
+            <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus(true)">
                 <input #optionType autoSize matInput class="option" type="text" [(ngModel)]="item.option"
                     (ngModelChange)="orderOptions()" (change)="optionChange()" (keydown.enter)="optionChange()"
                     [matAutocomplete]="optionTypeAutocomplete" />
@@ -57,14 +58,14 @@
 
         <ng-container *ngSwitchCase="'string'" [ngSwitch]="!!selected.option!.values">
             <ng-container *ngSwitchCase="false">
-                <mat-form-field subscriptSizing="dynamic" (mousedown)="focus()">
+                <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus()">
                     <input autoSize matInput class="stringOption optionValue" type="text"
                         [required]="!!selected.option!.required" [validateFn]="validate" #optionValue
                         [(ngModel)]="item.value" (change)="add()" (keydown.enter)="add()">
                 </mat-form-field>
             </ng-container>
             <ng-container *ngSwitchDefault>
-                <mat-form-field subscriptSizing="dynamic" (mousedown)="focus()">
+                <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus()">
                     <input autoSize matInput class="stringOption optionValue" type="text"
                         [required]="!!selected.option!.required" [validateFn]="validate" #optionValue
                         [(ngModel)]="item.value" (change)="add()" (keydown.enter)="add()"
@@ -81,14 +82,14 @@
 
         <ng-container *ngSwitchCase="'integer'" [ngSwitch]="!!selected.option!.values">
             <ng-container *ngSwitchCase="false">
-                <mat-form-field subscriptSizing="dynamic" (mousedown)="focus()">
+                <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus()">
                     <input autoSize matInput class="integerOption optionValue" type="text" [validateFn]="validate"
                         [required]="!!selected.option!.required" #optionValue [(ngModel)]="item.value" (change)="add()"
                         (keydown.enter)="add()" />
                 </mat-form-field>
             </ng-container>
             <ng-container *ngSwitchDefault>
-                <mat-form-field subscriptSizing="dynamic" (mousedown)="focus()">
+                <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus()">
                     <input autoSize matInput class="integerOption optionValue" type="text"
                         [required]="!!selected.option!.required" [validateFn]="validate" #optionValue
                         [(ngModel)]="item.value" (change)="add()" (keydown.enter)="add()"
@@ -104,7 +105,7 @@
         </ng-container>
 
         <ng-container *ngSwitchCase="'decimal'">
-            <mat-form-field subscriptSizing="dynamic" (mousedown)="focus()">
+            <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus()">
                 <input autoSize matInput class="decimalOption optionValue" type="text"
                     [required]="!!selected.option!.required" [validateFn]="validate" #optionValue
                     [(ngModel)]="item.value" (change)="add()" (keydown.enter)="add()" />
@@ -112,7 +113,7 @@
         </ng-container>
 
         <ng-container *ngSwitchCase="'date'">
-            <mat-form-field subscriptSizing="dynamic" (mousedown)="focus()">
+            <mat-form-field [subscriptSizing]="'dynamic'" (mousedown)="focus()">
                 <input autoSize matInput class="dateOption optionValue" type="text" #optionValue
                     [required]="!!selected.option!.required" [validateFn]="validate" [(ngModel)]="item.value"
                     (dateChange)="togglePopup(false); add()" (keydown.enter)="add()" [matDatepicker]="datePicker" />
